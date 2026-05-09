@@ -1,14 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, Command } from 'lucide-react';
+import { Send, User, Bot, Sparkles, ShieldCheck, Zap } from 'lucide-react';
 import { Message } from '@jarvis/shared';
+import { ToolTimeline } from './tools/ToolTimeline';
 
 interface ChatPanelProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
 }
-
-import { ToolTimeline } from './tools/ToolTimeline';
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
@@ -26,17 +25,47 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden">
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 overflow-y-auto px-6 py-8 space-y-8">
-          {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-              <Bot className="w-12 h-12" />
-              <div>
-                <h3 className="font-medium">How can I help you today?</h3>
-                <p className="text-sm text-muted-foreground">Press Cmd+K for quick commands</p>
-              </div>
+    <div className="flex-1 flex overflow-hidden bg-background">
+      <div className="flex-1 flex flex-col min-w-0 max-w-4xl mx-auto border-x border-black/5 dark:border-white/5 shadow-2xl relative z-10">
+        {/* Subtle Header */}
+        <header className="h-14 flex items-center justify-between px-8 border-b border-black/5 dark:border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
+              <Sparkles className="w-3 h-3 text-primary/60" />
             </div>
+            <h2 className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground/80">Jarvis Intelligence</h2>
+          </div>
+          <div className="flex items-center gap-4 text-[10px] text-muted-foreground/40 font-medium tracking-wide">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3 h-3" />
+              <span>SECURE</span>
+            </div>
+            <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/5" />
+            <div className="flex items-center gap-1.5 text-primary/40">
+              <Zap className="w-3 h-3 fill-current" />
+              <span>ACTIVE</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Message Area */}
+        <div className="flex-1 overflow-y-auto px-8 py-12 space-y-10 scrollbar-hide">
+          {messages.length === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="h-full flex flex-col items-center justify-center text-center space-y-8"
+            >
+              <div className="w-16 h-16 rounded-3xl bg-primary/5 border border-primary/10 flex items-center justify-center animate-float">
+                <Bot className="w-8 h-8 text-primary/40" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-2xl font-light tracking-tight text-foreground/80">How may I assist you?</h3>
+                <p className="text-sm text-muted-foreground/60 font-light max-w-sm leading-relaxed">
+                  I am Jarvis, your personal agent. Ready to manage your tasks, files, and system with elegance and precision.
+                </p>
+              </div>
+            </motion.div>
           )}
           
           <AnimatePresence>
@@ -45,22 +74,26 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
                 key={msg.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className={`flex gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  msg.role === 'user' ? 'bg-secondary' : 'bg-primary text-primary-foreground'
+                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                  msg.role === 'user' 
+                    ? 'bg-secondary text-secondary-foreground shadow-sm' 
+                    : 'bg-primary text-primary-foreground shadow-lg shadow-primary/10'
                 }`}>
                   {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
-                <div className={`max-w-[80%] space-y-1 ${msg.role === 'user' ? 'text-right' : ''}`}>
-                  <div className={`inline-block px-4 py-2 rounded-2xl text-sm leading-relaxed ${
+                
+                <div className={`max-w-[80%] space-y-2 ${msg.role === 'user' ? 'text-right' : ''}`}>
+                  <div className={`px-6 py-4 rounded-[1.5rem] text-sm leading-relaxed ${
                     msg.role === 'user' 
-                      ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                      : 'bg-muted rounded-tl-none'
+                      ? 'rounded-tr-none bg-secondary/50 text-foreground shadow-sm' 
+                      : 'rounded-tl-none bg-card text-foreground shadow-[0_4px_12px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.2)] border border-black/5 dark:border-white/5'
                   }`}>
                     {msg.content}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-[10px] text-muted-foreground/40 font-medium px-1 uppercase tracking-tighter">
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
@@ -70,38 +103,49 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
           <div ref={endRef} />
         </div>
 
-        <div className="p-6">
-          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto relative">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Jarvis anything..."
-              className="w-full bg-muted/50 border border-border/50 rounded-2xl px-6 py-4 pr-14 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
-            />
-            <button
-              type="submit"
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:scale-105 transition-transform"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+        {/* Minimalist Input Area */}
+        <div className="p-8 pt-0">
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto group">
+            <div className="relative flex items-center bg-muted/40 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-3xl px-6 py-4 transition-all duration-500 focus-within:bg-background focus-within:shadow-xl focus-within:shadow-black/5 focus-within:border-primary/20">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Compose a request..."
+                className="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder:text-muted-foreground/40 font-light"
+              />
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="w-10 h-10 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-lg shadow-primary/20"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="mt-6 flex justify-center items-center gap-10 text-[9px] text-muted-foreground/30 uppercase tracking-[0.3em] font-semibold">
+              <div className="flex items-center gap-3">
+                <kbd className="px-2 py-1 bg-muted rounded border border-black/5">⌘K</kbd>
+                <span>Commands</span>
+              </div>
+              <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/5" />
+              <div className="flex items-center gap-3">
+                <kbd className="px-3 py-1 bg-muted rounded border border-black/5">SPACE</kbd>
+                <span>Voice</span>
+              </div>
+            </div>
           </form>
-          <div className="mt-4 flex justify-center items-center gap-6 text-[11px] text-muted-foreground uppercase tracking-widest font-medium">
-            <div className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">⌘</kbd>
-              <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">K</kbd>
-              <span>Commands</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">SPACE</kbd>
-              <span>Voice</span>
-            </div>
-          </div>
         </div>
       </div>
 
-      <div className="w-80 border-l border-white/5 p-4 hidden md:flex flex-col">
-        <ToolTimeline />
+      {/* Elegant Sidebar */}
+      <div className="w-80 border-l border-black/5 dark:border-white/5 bg-background/50 hidden lg:flex flex-col">
+        <div className="p-6 pb-2">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/40 px-2">Operation Feed</h3>
+        </div>
+        <div className="flex-1 overflow-hidden p-4">
+          <ToolTimeline />
+        </div>
       </div>
     </div>
   );
