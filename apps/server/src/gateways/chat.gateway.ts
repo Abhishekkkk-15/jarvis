@@ -14,6 +14,8 @@ import { messages } from '@jarvis/database';
 import { HumanMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 import { SafetyService } from '../services/safety.service';
 
+import { ExecutionService } from '../services/execution.service';
+
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -30,7 +32,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly toolService: ToolService,
     private readonly databaseService: DatabaseService,
     private readonly safetyService: SafetyService,
-  ) {}
+    private readonly executionService: ExecutionService,
+  ) {
+    // Stream all tool events to all connected clients (or specific rooms if needed)
+    this.executionService.onEvent((event) => {
+      if (event.type === 'start') {
+        this.server.emit('toolStart', { name: event.toolName, id: event.id });
+      } else if (event.type === 'end') {
+        this.server.emit('toolEnd', { id: event.id, result: event.result });
+      } else if (event.type === 'error') {
+        this.server.emit('toolEnd', { id: event.id, result: { error: event.error } });
+      }
+    });
+  }
 
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id}`);
@@ -76,9 +90,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       }
 
-      if (fullContent) {
-        conversationHistory.push(new AIMessage(fullContent));
-      }
+      // After stream completes, create ONE AIMessage with content and tool calls
+      const aiMessage = new AIMessage({ 
+        content: fullContent || '', 
+        additional_kwargs: toolCalls.length > 0 ? { tool_calls: toolCalls } : {} 
+      });
+      conversationHistory.push(aiMessage);
 
       if (toolCalls.length > 0) {
         const toolResults: ToolMessage[] = [];
@@ -87,36 +104,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           const name = toolCall.function?.name;
           const args = JSON.parse(toolCall.function?.arguments || '{}');
           
-          client.emit('toolStart', { name, id: toolCall.id });
-
-          // Safety Check
-          if (this.safetyService.isDangerous(name)) {
-            client.emit('toolApprovalRequired', { name, id: toolCall.id, args });
-            const approved = await new Promise<boolean>((resolve) => {
-              this.pendingApprovals.set(toolCall.id, { resolve });
+          const result = await this.executionService.runTool(name, args, toolCall.id, async (id) => {
+            client.emit('chatUpdate', { content: `⏳ Jarvis is using tool: **${name}**...`, isFinal: false });
+            client.emit('toolApprovalRequired', { name, id, args });
+            return new Promise<boolean>((resolve) => {
+              this.pendingApprovals.set(id, { resolve });
             });
-            
-            if (!approved) {
-              const result = { error: 'User denied permission' };
-              client.emit('toolEnd', { id: toolCall.id, result });
-              toolResults.push(new ToolMessage({ tool_call_id: toolCall.id, content: JSON.stringify(result) }));
-              continue;
-            }
-          }
+          });
 
-          try {
-            const result = await this.toolService.executeTool(name, args);
-            client.emit('toolEnd', { id: toolCall.id, result });
-            toolResults.push(new ToolMessage({ tool_call_id: toolCall.id, content: JSON.stringify(result) }));
-          } catch (error: any) {
-            client.emit('toolEnd', { id: toolCall.id, result: { error: error.message } });
-            toolResults.push(new ToolMessage({ tool_call_id: toolCall.id, content: JSON.stringify({ error: error.message }) }));
-          }
+          client.emit('chatUpdate', { content: `✅ Completed: **${name}**`, isFinal: false });
+          toolResults.push(new ToolMessage({ 
+            tool_call_id: toolCall.id, 
+            content: typeof result === 'string' ? result : JSON.stringify(result) 
+          }));
         }
 
-        // Add tool calls and results to history for next iteration
-        // IMPORTANT: The AI message with tool_calls must come BEFORE the ToolMessages
-        conversationHistory.push(new AIMessage({ content: fullContent, additional_kwargs: { tool_calls: toolCalls } }));
         conversationHistory.push(...toolResults);
       } else {
         // No tool calls, we are done

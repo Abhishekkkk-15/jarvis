@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { AIService } from './ai.service';
 import { memories } from '@jarvis/database';
@@ -8,6 +8,7 @@ import { eq, sql } from 'drizzle-orm';
 export class MemoryService {
   constructor(
     private readonly databaseService: DatabaseService,
+    @Inject(forwardRef(() => AIService))
     private readonly aiService: AIService,
   ) {}
 

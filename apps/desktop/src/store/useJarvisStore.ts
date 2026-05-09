@@ -2,18 +2,30 @@ import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { Message } from '@jarvis/shared';
 
+interface ToolEvent {
+  id: string;
+  name: string;
+  status: 'running' | 'completed' | 'error';
+  args?: any;
+  result?: any;
+  timestamp: Date;
+}
+
 interface JarvisState {
   messages: Message[];
+  toolEvents: ToolEvent[];
   isConnected: boolean;
-  socket: any | null; // Using any for socket to avoid complex type issues if Socket is not properly imported
+  socket: any | null;
   activeScreen: 'chat' | 'workflows' | 'memory' | 'history' | 'settings';
   connect: () => void;
   sendMessage: (content: string) => void;
   setActiveScreen: (screen: JarvisState['activeScreen']) => void;
+  approveTool: (id: string, approved: boolean) => void;
 }
 
 export const useJarvisStore = create<JarvisState>((set, get) => ({
   messages: [],
+  toolEvents: [],
   isConnected: false,
   socket: null,
   activeScreen: 'chat',
@@ -50,7 +62,47 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
       });
     });
 
+    socket.on('toolStart', (event: { name: string, id: string, args: any }) => {
+      set((state) => ({
+        toolEvents: [
+          ...state.toolEvents,
+          {
+            id: event.id,
+            name: event.name,
+            status: 'running',
+            args: event.args,
+            timestamp: new Date(),
+          },
+        ],
+      }));
+    });
+
+    socket.on('toolEnd', (event: { id: string, result: any }) => {
+      set((state) => ({
+        toolEvents: state.toolEvents.map((te) =>
+          te.id === event.id
+            ? { ...te, status: event.result?.error ? 'error' : 'completed', result: event.result }
+            : te
+        ),
+      }));
+    });
+
+    socket.on('toolApprovalRequired', (event: { name: string, id: string, args: any }) => {
+      set((state) => ({
+        toolEvents: state.toolEvents.map((te) =>
+          te.id === event.id
+            ? { ...te, status: 'running' } // Visual hint that it's waiting
+            : te
+        ),
+      }));
+      // We could also show a global modal or a notification here
+    });
+
     set({ socket });
+  },
+
+  approveTool: (id: string, approved: boolean) => {
+    get().socket?.emit('approveTool', { id, approved });
   },
 
   sendMessage: (content: string) => {

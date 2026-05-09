@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { createGroqProvider, AIProvider, createNvidiaProvider } from '@jarvis/ai';
 import { DatabaseService } from '../database/database.service';
 import { settings } from '@jarvis/database';
@@ -11,6 +11,7 @@ import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 export class AIService {
   constructor(
     private readonly databaseService: DatabaseService,
+    @Inject(forwardRef(() => ToolService))
     private readonly toolService: ToolService,
   ) {}
 

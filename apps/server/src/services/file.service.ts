@@ -22,4 +22,29 @@ export class FileService {
   async readFile(filePath: string) {
     return fs.readFile(filePath, 'utf-8');
   }
+
+  async writeFile(filePath: string, content: string) {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, content, 'utf-8');
+    return { success: true };
+  }
+
+  async deleteFile(filePath: string) {
+    await fs.unlink(filePath);
+    return { success: true };
+  }
+
+  async listDirectory(dirPath: string) {
+    const files = await fs.readdir(dirPath, { withFileTypes: true });
+    return files.map(f => ({
+      name: f.name,
+      isDirectory: f.isDirectory(),
+      path: path.join(dirPath, f.name),
+    }));
+  }
+
+  async moveFile(source: string, destination: string) {
+    await fs.rename(source, destination);
+    return { success: true };
+  }
 }

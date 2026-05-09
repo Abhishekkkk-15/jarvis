@@ -8,6 +8,9 @@ import { FileService } from './services/file.service';
 import { SafetyService } from './services/safety.service';
 import { MemoryService } from './services/memory.service';
 import { IngestionService } from './services/ingestion.service';
+import { TerminalService } from './services/terminal.service';
+import { VisionService } from './services/vision.service';
+import { ExecutionService } from './services/execution.service';
 
 import { WorkflowController } from './controllers/workflow.controller';
 import { HistoryController } from './controllers/history.controller';
@@ -25,7 +28,10 @@ import { SettingsController } from './controllers/settings.controller';
     FileService, 
     SafetyService,
     MemoryService,
-    IngestionService
+    IngestionService,
+    TerminalService,
+    VisionService,
+    ExecutionService
   ],
 })
 export class AppModule {}

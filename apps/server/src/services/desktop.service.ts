@@ -21,8 +21,11 @@ export class DesktopService {
     await keyboard.pressKey(Key.Enter);
   }
 
+  async screenshot(filePath: string) {
+    return screen.capture(filePath);
+  }
+
   async takeScreenshot() {
-    const s = await screen.capture('screenshot.png');
-    return s;
+    return screen.capture('screenshot.png');
   }
 }
