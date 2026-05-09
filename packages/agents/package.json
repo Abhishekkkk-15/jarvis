@@ -1,0 +1,16 @@
+{
+  "name": "@jarvis/agents",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@langchain/core": "^0.1.0",
+    "@langchain/langgraph": "^0.0.10",
+    "drizzle-orm": "^0.30.0",
+    "@jarvis/ai": "workspace:*",
+    "@jarvis/tools": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,31 @@
+import { Module } from '@nestjs/common';
+import { ChatGateway } from './gateways/chat.gateway';
+import { AIService } from './services/ai.service';
+import { ToolService } from './services/tool.service';
+import { DatabaseService } from './database/database.service';
+import { DesktopService } from './services/desktop.service';
+import { FileService } from './services/file.service';
+import { SafetyService } from './services/safety.service';
+import { MemoryService } from './services/memory.service';
+import { IngestionService } from './services/ingestion.service';
+
+import { WorkflowController } from './controllers/workflow.controller';
+import { HistoryController } from './controllers/history.controller';
+import { SettingsController } from './controllers/settings.controller';
+
+@Module({
+  imports: [],
+  controllers: [WorkflowController, HistoryController, SettingsController],
+  providers: [
+    ChatGateway, 
+    AIService, 
+    ToolService, 
+    DatabaseService, 
+    DesktopService, 
+    FileService, 
+    SafetyService,
+    MemoryService,
+    IngestionService
+  ],
+})
+export class AppModule {}

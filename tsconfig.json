@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "lib": ["ESNext", "DOM", "ESNext.Disposable"],
+    "baseUrl": ".",
+    "paths": {
+      "@jarvis/shared": ["packages/shared/src"],
+      "@jarvis/database": ["packages/database/src"],
+      "@jarvis/ai": ["packages/ai/src"],
+      "@jarvis/tools": ["packages/tools/src"],
+      "@jarvis/agents": ["packages/agents/src"]
+    }
+  },
+  "include": ["apps/**/*", "packages/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
