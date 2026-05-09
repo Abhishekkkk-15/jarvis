@@ -17,9 +17,11 @@ interface JarvisState {
   isConnected: boolean;
   socket: any | null;
   activeScreen: 'chat' | 'workflows' | 'memory' | 'history' | 'settings';
+  theme: 'elite' | 'calm' | 'midnight';
   connect: () => void;
   sendMessage: (content: string) => void;
   setActiveScreen: (screen: JarvisState['activeScreen']) => void;
+  setTheme: (theme: JarvisState['theme']) => void;
   approveTool: (id: string, approved: boolean) => void;
 }
 
@@ -29,6 +31,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   isConnected: false,
   socket: null,
   activeScreen: 'chat',
+  theme: 'calm',
 
   connect: () => {
     const socket = io('http://localhost:3001');
@@ -119,4 +122,8 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   },
   
   setActiveScreen: (screen) => set({ activeScreen: screen }),
+  setTheme: (theme) => {
+    set({ theme });
+    document.documentElement.setAttribute('data-theme', theme);
+  },
 }));

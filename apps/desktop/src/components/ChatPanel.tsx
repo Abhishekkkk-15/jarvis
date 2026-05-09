@@ -1,8 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, Sparkles, ShieldCheck, Zap } from 'lucide-react';
+import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun } from 'lucide-react';
 import { Message } from '@jarvis/shared';
 import { ToolTimeline } from './tools/ToolTimeline';
+import { useJarvisStore } from '../store/useJarvisStore';
 
 interface ChatPanelProps {
   messages: Message[];
@@ -11,6 +12,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
+  const { theme, setTheme } = useJarvisStore();
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,8 +27,8 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-background">
-      <div className="flex-1 flex flex-col min-w-0 max-w-4xl mx-auto border-x border-black/5 dark:border-white/5 shadow-2xl relative z-10">
+    <div className="flex-1 flex overflow-hidden bg-background transition-colors duration-700">
+      <div className="flex-1 flex flex-col min-w-0 max-w-4xl mx-auto border-x border-black/5 dark:border-white/5 shadow-2xl relative z-10 scanline">
         {/* Subtle Header */}
         <header className="h-14 flex items-center justify-between px-8 border-b border-black/5 dark:border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-3">
@@ -35,15 +37,39 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
             </div>
             <h2 className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground/80">Jarvis Intelligence</h2>
           </div>
-          <div className="flex items-center gap-4 text-[10px] text-muted-foreground/40 font-medium tracking-wide">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3 h-3" />
-              <span>SECURE</span>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-full border border-black/5 dark:border-white/5">
+              {[
+                { id: 'calm', icon: Sun, label: 'Calm' },
+                { id: 'elite', icon: Monitor, label: 'Elite' },
+                { id: 'midnight', icon: Moon, label: 'Midnight' }
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id as any)}
+                  className={`p-1.5 rounded-full transition-all ${
+                    theme === t.id 
+                      ? 'bg-card text-primary shadow-sm scale-110' 
+                      : 'text-muted-foreground/40 hover:text-muted-foreground'
+                  }`}
+                  title={t.label}
+                >
+                  <t.icon className="w-3 h-3" />
+                </button>
+              ))}
             </div>
-            <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/5" />
-            <div className="flex items-center gap-1.5 text-primary/40">
-              <Zap className="w-3 h-3 fill-current" />
-              <span>ACTIVE</span>
+            
+            <div className="flex items-center gap-4 text-[10px] text-muted-foreground/40 font-medium tracking-wide">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3 h-3" />
+                <span>SECURE</span>
+              </div>
+              <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/5" />
+              <div className="flex items-center gap-1.5 text-primary/40">
+                <Zap className="w-3 h-3 fill-current" />
+                <span>ACTIVE</span>
+              </div>
             </div>
           </div>
         </header>
