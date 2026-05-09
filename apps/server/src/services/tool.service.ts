@@ -149,7 +149,12 @@ export class ToolService {
     this.bindTool('execute_workflow', async ({ workflowId }) => ({ success: true, status: 'started' }));
 
     // 12. Voice Tools
-    this.bindTool('speak_text', async ({ text }) => ({ success: true, message: `Speaking: ${text}` }));
+    this.bindTool('speak_text', async ({ text }) => {
+      // Use PowerShell to synthesize speech on Windows
+      const command = `Add-Type -AssemblyName System.Speech; $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer; $speak.Speak("${text.replace(/"/g, '`"')}")`;
+      await this.terminalService.executePowerShell(command);
+      return { success: true, message: `Spoken: ${text}` };
+    });
 
     // 13. Internet Tools
     this.bindTool('web_search', async ({ query }) => ({ results: [`https://www.google.com/search?q=${encodeURIComponent(query)}`] }));
