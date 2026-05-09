@@ -7,6 +7,7 @@ import { TerminalService } from './terminal.service';
 import { VisionService } from './vision.service';
 import { MemoryService } from './memory.service';
 import { AIService } from './ai.service';
+import { SettingsService } from './settings.service';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -25,6 +26,7 @@ export class ToolService {
     private readonly memoryService: MemoryService,
     @Inject(forwardRef(() => AIService))
     private readonly aiService: AIService,
+    private readonly settingsService: SettingsService,
   ) {
     this.registry = new ToolRegistry();
     this.setupTools();
@@ -150,10 +152,21 @@ export class ToolService {
 
     // 12. Voice Tools
     this.bindTool('speak_text', async ({ text }) => {
-      // Use PowerShell to synthesize speech on Windows
-      const command = `Add-Type -AssemblyName System.Speech; $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer; $speak.Speak("${text.replace(/"/g, '`"')}")`;
+      const settings = await this.settingsService.getSettings();
+      const v = settings.voice;
+      
+      // PowerShell command with detailed synthesis settings
+      const command = `
+        Add-Type -AssemblyName System.Speech;
+        $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
+        $speak.Rate = ${v.rate};
+        $speak.Volume = ${v.volume};
+        try { $speak.SelectVoice("${v.voiceId}"); } catch {}
+        $speak.Speak("${text.replace(/"/g, '`"')}");
+      `.replace(/\n/g, ' ');
+
       await this.terminalService.executePowerShell(command);
-      return { success: true, message: `Spoken: ${text}` };
+      return { success: true, message: `Spoken with ${v.voiceId}: ${text}` };
     });
 
     // 13. Internet Tools

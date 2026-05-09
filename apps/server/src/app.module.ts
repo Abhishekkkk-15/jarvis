@@ -11,6 +11,8 @@ import { IngestionService } from './services/ingestion.service';
 import { TerminalService } from './services/terminal.service';
 import { VisionService } from './services/vision.service';
 import { ExecutionService } from './services/execution.service';
+import { SettingsService } from './services/settings.service';
+import { VoiceService } from './services/voice.service';
 
 import { WorkflowController } from './controllers/workflow.controller';
 import { HistoryController } from './controllers/history.controller';
@@ -31,7 +33,9 @@ import { SettingsController } from './controllers/settings.controller';
     IngestionService,
     TerminalService,
     VisionService,
-    ExecutionService
+    ExecutionService,
+    SettingsService,
+    VoiceService
   ],
 })
 export class AppModule {}

@@ -1,26 +1,27 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
-import { settings } from '@jarvis/database';
-import { eq } from 'drizzle-orm';
+
+import { SettingsService, VoiceSettings } from '../services/settings.service';
+import { VoiceService } from '../services/voice.service';
 
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly voiceService: VoiceService
+  ) {}
 
   @Get()
   async getSettings() {
-    return this.databaseService.db.select().from(settings);
+    return this.settingsService.getSettings();
   }
 
-  @Post()
-  async updateSetting(@Body() data: { key: string; value: any }) {
-    return this.databaseService.db
-      .insert(settings)
-      .values(data)
-      .onConflictDoUpdate({
-        target: settings.key,
-        set: { value: data.value, updatedAt: new Date() },
-      })
-      .returning();
+  @Get('voices')
+  async getVoices() {
+    return this.voiceService.getVoices();
+  }
+
+  @Post('voice')
+  async updateVoice(@Body() data: Partial<VoiceSettings>) {
+    return this.settingsService.updateVoiceSettings(data);
   }
 }

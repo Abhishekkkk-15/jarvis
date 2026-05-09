@@ -12,12 +12,76 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
-  const { theme, setTheme } = useJarvisStore();
+  const { theme, setTheme, isListening, setIsListening } = useJarvisStore();
   const endRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0])
+          .map((result: any) => result.transcript)
+          .join('');
+        setInput(transcript);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const startVoice = () => {
+    if (recognitionRef.current && !isListening) {
+      setInput('');
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const stopVoice = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      if (input.trim()) {
+        onSendMessage(input);
+        setInput('');
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault();
+        startVoice();
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        stopVoice();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isListening, input]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,13 +146,28 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
               animate={{ opacity: 1, y: 0 }}
               className="h-full flex flex-col items-center justify-center text-center space-y-8"
             >
-              <div className="w-16 h-16 rounded-3xl bg-primary/5 border border-primary/10 flex items-center justify-center animate-float">
-                <Bot className="w-8 h-8 text-primary/40" />
+              <div className="relative">
+                {isListening && (
+                  <motion.div 
+                    layoutId="aura"
+                    className="absolute inset-0 bg-primary/20 rounded-full blur-3xl"
+                    animate={{ scale: [1, 1.5, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                  />
+                )}
+                <div className="w-16 h-16 rounded-3xl bg-primary/5 border border-primary/10 flex items-center justify-center animate-float relative z-10">
+                  <Bot className={`w-8 h-8 ${isListening ? 'text-primary animate-pulse' : 'text-primary/40'}`} />
+                </div>
               </div>
               <div className="space-y-3">
-                <h3 className="text-2xl font-light tracking-tight text-foreground/80">How may I assist you?</h3>
+                <h3 className="text-2xl font-light tracking-tight text-foreground/80">
+                  {isListening ? "I'm listening..." : "How may I assist you?"}
+                </h3>
                 <p className="text-sm text-muted-foreground/60 font-light max-w-sm leading-relaxed">
-                  I am Jarvis, your personal agent. Ready to manage your tasks, files, and system with elegance and precision.
+                  {isListening 
+                    ? "Speak clearly. I will process your request once you release the space bar."
+                    : "I am Jarvis, your personal agent. Ready to manage your tasks with elegance and precision."
+                  }
                 </p>
               </div>
             </motion.div>
@@ -131,13 +210,24 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
 
         {/* Minimalist Input Area */}
         <div className="p-8 pt-0">
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto group">
-            <div className="relative flex items-center bg-muted/40 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-3xl px-6 py-4 transition-all duration-500 focus-within:bg-background focus-within:shadow-xl focus-within:shadow-black/5 focus-within:border-primary/20">
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto group relative">
+            {isListening && (
+              <motion.div 
+                className="absolute -inset-4 bg-primary/5 rounded-[2rem] blur-xl"
+                animate={{ opacity: [0.2, 0.5, 0.2] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+              />
+            )}
+            <div className={`relative flex items-center bg-muted/40 dark:bg-white/5 border rounded-3xl px-6 py-4 transition-all duration-500 ${
+              isListening 
+                ? 'border-primary shadow-2xl shadow-primary/20 bg-background' 
+                : 'border-black/5 dark:border-white/5 focus-within:bg-background focus-within:shadow-xl focus-within:shadow-black/5 focus-within:border-primary/20'
+            }`}>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Compose a request..."
+                placeholder={isListening ? "Listening to your voice..." : "Compose a request..."}
                 className="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder:text-muted-foreground/40 font-light"
               />
               <button
@@ -156,8 +246,8 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
               </div>
               <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/5" />
               <div className="flex items-center gap-3">
-                <kbd className="px-3 py-1 bg-muted rounded border border-black/5">SPACE</kbd>
-                <span>Voice</span>
+                <kbd className={`px-3 py-1 rounded border border-black/5 transition-colors ${isListening ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted'}`}>SPACE</kbd>
+                <span className={isListening ? 'text-primary' : ''}>{isListening ? 'Hold to talk' : 'Voice Mode'}</span>
               </div>
             </div>
           </form>

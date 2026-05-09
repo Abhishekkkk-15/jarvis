@@ -18,10 +18,17 @@ interface JarvisState {
   socket: any | null;
   activeScreen: 'chat' | 'workflows' | 'memory' | 'history' | 'settings';
   theme: 'elite' | 'calm' | 'midnight';
+  isListening: boolean;
+  settings: any;
+  availableVoices: string[];
   connect: () => void;
   sendMessage: (content: string) => void;
   setActiveScreen: (screen: JarvisState['activeScreen']) => void;
   setTheme: (theme: JarvisState['theme']) => void;
+  setIsListening: (isListening: boolean) => void;
+  fetchSettings: () => Promise<void>;
+  updateVoiceSettings: (voice: any) => Promise<void>;
+  fetchVoices: () => Promise<void>;
   approveTool: (id: string, approved: boolean) => void;
 }
 
@@ -32,6 +39,9 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   socket: null,
   activeScreen: 'chat',
   theme: 'calm',
+  isListening: false,
+  settings: null,
+  availableVoices: [],
 
   connect: () => {
     const socket = io('http://localhost:3001');
@@ -125,5 +135,27 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   setTheme: (theme) => {
     set({ theme });
     document.documentElement.setAttribute('data-theme', theme);
+  },
+  setIsListening: (isListening) => set({ isListening }),
+  
+  fetchSettings: async () => {
+    const res = await fetch('http://localhost:3001/settings');
+    const settings = await res.json();
+    set({ settings });
+  },
+
+  updateVoiceSettings: async (voice) => {
+    await fetch('http://localhost:3001/settings/voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(voice),
+    });
+    get().fetchSettings();
+  },
+
+  fetchVoices: async () => {
+    const res = await fetch('http://localhost:3001/settings/voices');
+    const voices = await res.json();
+    set({ availableVoices: voices });
   },
 }));
