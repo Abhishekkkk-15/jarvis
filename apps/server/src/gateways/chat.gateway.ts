@@ -143,4 +143,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.pendingApprovals.delete(payload.id);
     }
   }
+
+  @SubscribeMessage('speak')
+  async handleSpeak(client: Socket, payload: { text: string }) {
+    await this.toolService.executeTool('speak_text', { text: payload.text });
+  }
 }

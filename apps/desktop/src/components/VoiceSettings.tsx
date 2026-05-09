@@ -27,22 +27,41 @@ export const VoiceSettings: React.FC = () => {
       <div className="space-y-4">
         <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
           <Mic className="w-3 h-3" />
-          System Voice
+          Active Persona
         </label>
-        <div className="grid grid-cols-1 gap-2">
-          {voices.map((voice) => (
-            <button
-              key={voice}
-              onClick={() => updateVoiceSettings({ voiceId: voice })}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
-                v.voiceId === voice 
-                  ? 'bg-primary/5 border-primary/20 text-primary' 
-                  : 'bg-black/5 dark:bg-white/5 border-transparent hover:border-black/10'
-              }`}
-            >
-              <span className="text-sm font-medium">{voice}</span>
-              {v.voiceId === voice && <Check className="w-4 h-4" />}
-            </button>
+        <div className="grid grid-cols-1 gap-3">
+          {voices.map((p: any) => (
+            <div key={p.id} className="relative group">
+              <button
+                onClick={() => updateVoiceSettings({ voiceId: p.id })}
+                className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all text-left ${
+                  v.voiceId === p.id 
+                    ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20' 
+                    : 'bg-black/5 dark:bg-white/5 border-transparent hover:border-black/10'
+                }`}
+              >
+                <div>
+                  <div className="text-sm font-bold tracking-tight">{p.name}</div>
+                  <div className={`text-[10px] uppercase tracking-widest font-semibold mt-0.5 ${v.voiceId === p.id ? 'opacity-70' : 'text-muted-foreground/60'}`}>
+                    {p.style} • {p.age}
+                  </div>
+                </div>
+                {v.voiceId === p.id && <Check className="w-4 h-4" />}
+              </button>
+              
+              {v.voiceId !== p.id && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Call a test voice tool or send a test message
+                    useJarvisStore.getState().socket?.emit('sendMessage', { content: `Test voice ${p.name}` });
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/5 hover:bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Volume2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </div>

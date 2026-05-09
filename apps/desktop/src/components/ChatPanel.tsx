@@ -12,13 +12,19 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
-  const { theme, setTheme, isListening, setIsListening } = useJarvisStore();
+  const { theme, setTheme, isListening, setIsListening, speak, settings } = useJarvisStore();
   const endRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    
+    // Auto-Speak Logic
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.role === 'assistant' && settings?.voice?.autoSpeak) {
+      speak(lastMsg.content);
+    }
+  }, [messages, settings?.voice?.autoSpeak]);
 
   // Initialize Speech Recognition
   useEffect(() => {

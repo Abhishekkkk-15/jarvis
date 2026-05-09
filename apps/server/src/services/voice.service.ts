@@ -13,15 +13,28 @@ export class VoiceService {
     const command = `
       Add-Type -AssemblyName System.Speech;
       $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
-      $speak.GetInstalledVoices() | Select-Object -ExpandProperty VoiceInfo | Select-Object Name | ConvertTo-Json
+      $speak.GetInstalledVoices() | Select-Object -ExpandProperty VoiceInfo | Select-Object Name, Gender, Age | ConvertTo-Json
     `.replace(/\n/g, ' ');
     
     const result = await this.terminalService.executePowerShell(command);
     try {
-      const data = JSON.parse(result.stdout);
-      return Array.isArray(data) ? data.map(v => v.Name) : [data.Name];
+      const rawVoices = JSON.parse(result.stdout);
+      const voices = Array.isArray(rawVoices) ? rawVoices : [rawVoices];
+      
+      // Map system voices to Jarvis Personas
+      return voices.map(v => ({
+        id: v.Name,
+        name: v.Name.includes('David') ? 'The Butler' : 
+              v.Name.includes('Zira') ? 'The Analyst' : 
+              v.Name.includes('Hazel') ? 'The Executive' : v.Name,
+        style: v.Gender === 1 ? 'Masculine / Authoritative' : 'Feminine / Precise',
+        age: v.Age === 1 ? 'Mature' : 'Adult'
+      }));
     } catch {
-      return ['Microsoft David', 'Microsoft Zira'];
+      return [
+        { id: 'Microsoft David', name: 'The Butler', style: 'Masculine / Formal', age: 'Mature' },
+        { id: 'Microsoft Zira', name: 'The Analyst', style: 'Feminine / Precise', age: 'Adult' }
+      ];
     }
   }
 }

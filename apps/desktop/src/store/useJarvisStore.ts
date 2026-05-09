@@ -29,6 +29,7 @@ interface JarvisState {
   fetchSettings: () => Promise<void>;
   updateVoiceSettings: (voice: any) => Promise<void>;
   fetchVoices: () => Promise<void>;
+  speak: (text: string) => void;
   approveTool: (id: string, approved: boolean) => void;
 }
 
@@ -157,5 +158,9 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
     const res = await fetch('http://localhost:3001/settings/voices');
     const voices = await res.json();
     set({ availableVoices: voices });
+  },
+
+  speak: (text) => {
+    get().socket?.emit('speak', { text });
   },
 }));
