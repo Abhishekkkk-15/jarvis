@@ -10,6 +10,13 @@ export interface AIProviderConfig {
   embeddingModel?: string;
 }
 
+export interface TtsConfig {
+  apiKey: string;
+  model: string;
+  voice?: string;
+  audioPrompt?: string;
+}
+
 class MockEmbeddings extends Embeddings {
   constructor() {
     super({});
@@ -97,4 +104,41 @@ export class LocalProvider extends AIProvider {
 
 export const createLocalProvider = (model = 'llama3') => {
   return new LocalProvider(model);
+};
+
+export class TtsProvider {
+  constructor(private config: TtsConfig) {}
+
+  async generateSpeech(text: string): Promise<Buffer> {
+    const response = await fetch('https://integrate.api.nvidia.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.config.model,
+        input: text,
+        voice: this.config.voice ?? 'Magpie-ZeroShot.Female-1',
+        audio_prompt: this.config.audioPrompt,
+        language: 'en-US',
+        response_format: 'wav',
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`NVIDIA TTS Error: ${response.status} - ${error}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+}
+
+export const createNvidiaTtsProvider = (apiKey: string, model = 'nvidia/magpie-tts-zeroshot') => {
+  return new TtsProvider({
+    apiKey,
+    model,
+  });
 };

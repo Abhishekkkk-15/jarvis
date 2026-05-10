@@ -31,7 +31,7 @@ export class TerminalService {
 
   async executePowerShell(command: string, cwd?: string, timeout = 30000) {
     // Use powershell.exe explicitly and better escaping
-    const psCommand = `powershell.exe -NoProfile -NonInteractive -Command "${command.replace(/"/g, '\"\"')}"`;
+    const psCommand = `powershell.exe -NoProfile -NonInteractive -Command "${command.replace(/"/g, '`"')}"`;
     return this.executeCommand(psCommand, cwd, timeout);
   }
 }

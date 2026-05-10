@@ -22,7 +22,7 @@ export class VoiceService {
       const voices = Array.isArray(rawVoices) ? rawVoices : [rawVoices];
       
       // Map system voices to Jarvis Personas
-      return voices.map(v => ({
+      const mappedVoices = voices.map(v => ({
         id: v.Name,
         name: v.Name.includes('David') ? 'The Butler' : 
               v.Name.includes('Zira') ? 'The Analyst' : 
@@ -30,11 +30,32 @@ export class VoiceService {
         style: v.Gender === 1 ? 'Masculine / Authoritative' : 'Feminine / Precise',
         age: v.Age === 1 ? 'Mature' : 'Adult'
       }));
+
+      if (process.env.NVIDIA_API_KEY) {
+        mappedVoices.unshift({
+          id: 'nvidia-nim',
+          name: 'NVIDIA Jarvis (Premium)',
+          style: 'Studio Quality / Zero-Shot',
+          age: 'Adult'
+        });
+      }
+
+      return mappedVoices;
     } catch {
-      return [
+      const fallbacks = [
         { id: 'Microsoft David', name: 'The Butler', style: 'Masculine / Formal', age: 'Mature' },
         { id: 'Microsoft Zira', name: 'The Analyst', style: 'Feminine / Precise', age: 'Adult' }
       ];
+      
+      if (process.env.NVIDIA_API_KEY) {
+        fallbacks.unshift({
+          id: 'nvidia-nim',
+          name: 'NVIDIA Jarvis (Premium)',
+          style: 'Studio Quality / Zero-Shot',
+          age: 'Adult'
+        });
+      }
+      return fallbacks;
     }
   }
 }

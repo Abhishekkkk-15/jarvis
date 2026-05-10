@@ -8,6 +8,7 @@ import { VisionService } from './vision.service';
 import { MemoryService } from './memory.service';
 import { AIService } from './ai.service';
 import { SettingsService } from './settings.service';
+import { TtsService } from './tts.service';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -27,6 +28,7 @@ export class ToolService {
     @Inject(forwardRef(() => AIService))
     private readonly aiService: AIService,
     private readonly settingsService: SettingsService,
+    private readonly ttsService: TtsService,
   ) {
     this.registry = new ToolRegistry();
     this.setupTools();
@@ -155,7 +157,17 @@ export class ToolService {
       const settings = await this.settingsService.getSettings();
       const v = settings.voice;
       
-      // PowerShell command with detailed synthesis settings
+      // Attempt NVIDIA NIM TTS if configured and key is present
+      if (process.env.NVIDIA_API_KEY) {
+        try {
+          await this.ttsService.speak(text);
+          return { success: true, message: `Spoken via NVIDIA NIM: ${text}` };
+        } catch (error: any) {
+          console.warn('NVIDIA NIM TTS failed, falling back to PowerShell:', error.message);
+        }
+      }
+
+      // Fallback: PowerShell command with detailed synthesis settings
       const command = `
         Add-Type -AssemblyName System.Speech;
         $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
@@ -166,7 +178,7 @@ export class ToolService {
       `.replace(/\n/g, ' ');
 
       await this.terminalService.executePowerShell(command);
-      return { success: true, message: `Spoken with ${v.voiceId}: ${text}` };
+      return { success: true, message: `Spoken via PowerShell (${v.voiceId}): ${text}` };
     });
 
     // 13. Internet Tools
