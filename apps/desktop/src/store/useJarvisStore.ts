@@ -17,8 +17,9 @@ interface JarvisState {
   isConnected: boolean;
   socket: any | null;
   activeScreen: 'chat' | 'workflows' | 'memory' | 'history' | 'settings';
-  theme: 'elite' | 'calm' | 'midnight';
+  theme: 'elite' | 'calm' | 'midnight' | 'nordic';
   isListening: boolean;
+  isSpeaking: boolean;
   settings: any;
   availableVoices: string[];
   connect: () => void;
@@ -26,6 +27,7 @@ interface JarvisState {
   setActiveScreen: (screen: JarvisState['activeScreen']) => void;
   setTheme: (theme: JarvisState['theme']) => void;
   setIsListening: (isListening: boolean) => void;
+  setIsSpeaking: (isSpeaking: boolean) => void;
   fetchSettings: () => Promise<void>;
   updateVoiceSettings: (voice: any) => Promise<void>;
   fetchVoices: () => Promise<void>;
@@ -41,6 +43,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   activeScreen: 'chat',
   theme: 'calm',
   isListening: false,
+  isSpeaking: false,
   settings: null,
   availableVoices: [],
 
@@ -178,6 +181,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
     document.documentElement.setAttribute('data-theme', theme);
   },
   setIsListening: (isListening) => set({ isListening }),
+  setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
   
   fetchSettings: async () => {
     const res = await fetch('http://localhost:3001/settings');

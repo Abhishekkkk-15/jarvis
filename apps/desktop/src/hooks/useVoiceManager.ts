@@ -2,9 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useJarvisStore } from '../store/useJarvisStore';
 
 export function useVoiceManager() {
-  const { sendMessage } = useJarvisStore();
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const { sendMessage, isListening, setIsListening, isSpeaking, setIsSpeaking } = useJarvisStore();
   const recognitionRef = useRef<any>(null);
 
   const startListening = useCallback(() => {

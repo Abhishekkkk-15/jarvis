@@ -4,6 +4,7 @@ import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Su
 import { Message } from '@jarvis/shared';
 import { ToolTimeline } from './tools/ToolTimeline';
 import { useJarvisStore } from '../store/useJarvisStore';
+import { NeuralPulse } from './NeuralPulse';
 
 interface ChatPanelProps {
   messages: Message[];
@@ -12,7 +13,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
-  const { theme, setTheme, isListening, setIsListening, speak, settings } = useJarvisStore();
+  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings } = useJarvisStore();
   const endRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -132,26 +133,16 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
               className="h-full flex flex-col items-center justify-center text-center space-y-8"
             >
               <div className="relative">
-                {isListening && (
-                  <motion.div 
-                    layoutId="aura"
-                    className="absolute inset-0 bg-primary/20 rounded-full blur-3xl"
-                    animate={{ scale: [1, 1.5, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  />
-                )}
-                <div className="w-16 h-16 rounded-3xl bg-primary/5 border border-primary/10 flex items-center justify-center animate-float relative z-10">
-                  <Bot className={`w-8 h-8 ${isListening ? 'text-primary animate-pulse' : 'text-primary/40'}`} />
-                </div>
+                <NeuralPulse active={isListening || isSpeaking} intensity={(isListening || isSpeaking) ? 'high' : 'medium'} />
               </div>
-              <div className="space-y-3">
-                <h3 className="text-2xl font-light tracking-tight text-foreground/80">
-                  {isListening ? "I'm listening..." : "How may I assist you?"}
+              <div className="space-y-4">
+                <h3 className="text-3xl font-light tracking-tight text-foreground/90 font-outfit">
+                  {isListening ? "I'm listening..." : "Ready to assist you"}
                 </h3>
-                <p className="text-sm text-muted-foreground/60 font-light max-w-sm leading-relaxed">
+                <p className="text-sm text-muted-foreground/40 font-light max-w-sm leading-relaxed mx-auto">
                   {isListening 
-                    ? "Speak clearly. I will process your request once you release the space bar."
-                    : "I am Jarvis, your personal agent. Ready to manage your tasks with elegance and precision."
+                    ? "Speak clearly. I am processing your neural intent."
+                    : "I am Jarvis. Your personal agent for the high-performance workspace."
                   }
                 </p>
               </div>
