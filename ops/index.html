@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>NVIDIA Magpie TTS Zeroshot - AI Voice Cloning Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f6f9fc 0%, #eef2f5 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+        .glass-card {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 3rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.6);
+            transition: all 0.2s ease;
+        }
+        .hero {
+            background: #0a0f1c;
+            padding: 2rem 2rem 1.5rem 2rem;
+            color: white;
+            border-bottom: 1px solid #2c3e44;
+        }
+        .hero h1 {
+            margin: 0 0 0.35rem 0;
+            font-weight: 700;
+            font-size: 1.9rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #FFFFFF 0%, #86b3ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .hero p {
+            margin: 0;
+            opacity: 0.8;
+            font-size: 0.95rem;
+        }
+        .badge {
+            background: #1f2a3e;
+            display: inline-block;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 0.8rem;
+        }
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            padding: 2rem;
+        }
+        .column {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            border-radius: 1.8rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+            border: 1px solid #e9edf2;
+        }
+        .column h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-left: 4px solid #76b900;
+            padding-left: 0.75rem;
+        }
+        .form-group {
+            margin-bottom: 1.4rem;
+        }
+        label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #1e2a3a;
+        }
+        textarea, input, select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 1.2rem;
+            border: 1.5px solid #e2e8f0;
+            background: #fefefe;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            outline: none;
+            font-family: inherit;
+        }
+        textarea:focus, input:focus, select:focus {
+            border-color: #76b900;
+            box-shadow: 0 0 0 3px rgba(118,185,0,0.2);
+        }
+        button {
+            background: #1a2c3e;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.8rem 1.4rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        button.primary {
+            background: #76b900;
+            box-shadow: 0 4px 8px rgba(118,185,0,0.3);
+        }
+        button.primary:hover {
+            background: #5f9c00;
+            transform: translateY(-1px);
+        }
+        button.danger {
+            background: #aa2e2e;
+        }
+        button.danger:hover {
+            background: #8b2323;
+        }
+        .voice-preview {
+            background: #f1f5f9;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 0.8rem;
+            font-size: 0.8rem;
+        }
+        .status {
+            margin-top: 1.2rem;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            background: #eff3f6;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .audio-player {
+            margin-top: 1rem;
+            width: 100%;
+        }
+        audio {
+            width: 100%;
+            border-radius: 2rem;
+        }
+        hr {
+            margin: 1rem 0;
+            border: none;
+            border-top: 1px solid #e2edf2;
+        }
+        .info-note {
+            background: #eef4ff;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            font-size: 0.75rem;
+            color: #1e4b6e;
+        }
+        .flex-btns {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 780px) {
+            .two-columns { flex-direction: column; }
+            .hero h1 { font-size: 1.5rem; }
+        }
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="glass-card">
+    <div class="hero">
+        <h1>🎙️ Magpie TTS Zeroshot · NVIDIA NIM</h1>
+        <p>Zero-shot voice cloning & expressive synthesis — powered by NVIDIA API & Magpie‑TTS</p>
+        <div class="badge">✨ Streaming ready | Voice cloning from 3–10 sec audio</div>
+    </div>
+
+    <div class="two-columns">
+        <!-- LEFT PANEL: Synthesis controls -->
+        <div class="column">
+            <h2>📝 1. Text & Voice</h2>
+            <div class="form-group">
+                <label>🔊 Text to speak (English):</label>
+                <textarea id="ttsText" rows="4" placeholder="Enter any English text. For example: 'Hello! This voice was cloned from a short reference audio using NVIDIA Magpie Zeroshot model.'">Welcome to NVIDIA AI voice cloning. This speech sounds just like the uploaded reference voice.</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>🎤 Voice mode:</label>
+                <select id="voiceModeSelect">
+                    <option value="clone">✨ Voice Cloning (Zero-shot from uploaded audio)</option>
+                    <option value="builtin">🎭 Built-in NVIDIA Voices (Female/Male emotions)</option>
+                </select>
+            </div>
+
+            <div id="cloneSection">
+                <div class="form-group">
+                    <label>📁 Reference Audio Prompt (WAV, 22kHz+, 3–10 sec):</label>
+                    <input type="file" id="audioPromptFile" accept="audio/wav,audio/x-wav">
+                    <div class="info-note" style="margin-top: 8px;">
+                        🧠 Best results: mono 16-bit WAV, ~5 seconds, clean speech. The model clones the speaker identity.
+                    </div>
+                </div>
+            </div>
+
+            <div id="builtinSection" style="display: none;">
+                <div class="form-group">
+                    <label>🗣️ Select built-in voice:</label>
+                    <select id="builtinVoiceSelect">
+                        <option value="Magpie-ZeroShot.Female-1">👩 Female-1 (Natural, recommended)</option>
+                        <option value="Magpie-ZeroShot.Male-1">👨 Male-1 (Natural, recommended)</option>
+                        <option value="Magpie-ZeroShot.Female-Happy">😊 Female-Happy</option>
+                        <option value="Magpie-ZeroShot.Female-Calm">🍃 Female-Calm</option>
+                        <option value="Magpie-ZeroShot.Male-Calm">🌿 Male-Calm</option>
+                        <option value="Magpie-ZeroShot.Male-Angry">🔥 Male-Angry</option>
+                        <option value="Magpie-ZeroShot.Female-Angry">⚡ Female-Angry</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🎚️ Zero-shot voice fidelity (quality 1–40, higher = closer clone but slower):</label>
+                <input type="range" id="qualitySlider" min="1" max="40" value="22" step="1">
+                <span id="qualityValueDisplay" style="font-size:0.8rem; margin-left:8px;">22 / 40</span>
+                <div class="info-note">20 = balanced, 30+ = higher similarity & synthesis time</div>
+            </div>
+
+            <div class="flex-btns">
+                <button id="synthesizeBtn" class="primary">🎧 Synthesize & Speak</button>
+                <button id="stopAudioBtn" class="danger">⏹️ Stop</button>
+            </div>
+            <div id="statusMessage" class="status">💡 Ready — press synthesize to generate speech via NVIDIA NIM.</div>
+        </div>
+
+        <!-- RIGHT PANEL: Audio output + api config -->
+        <div class="column">
+            <h2>⚙️ 2. NVIDIA NIM Config & Output</h2>
+            <div class="form-group">
+                <label>🌐 NVIDIA NIM Endpoint (Magpie TTS Zeroshot):</label>
+                <input type="text" id="apiEndpoint" placeholder="https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/... or your local NIM URL" value="https://ai.api.nvidia.com/v1/audio/nvidia/magpie-tts-zeroshot">
+                <div class="info-note">Default is the NVIDIA cloud endpoint. For production, replace with your NIM URL & API key.</div>
+            </div>
+            <div class="form-group">
+                <label>🔑 NVIDIA API Key (Bearer Token):</label>
+                <input type="password" id="apiKey" placeholder="nvapi-... or Bearer token">
+                <div class="info-note">Get it from build.nvidia.com or your NGC account. The key stays in your browser.</div>
+            </div>
+
+            <div class="form-group">
+                <label>🌍 Language code (ISO 639-1):</label>
+                <select id="languageCode">
+                    <option value="en-US" selected>English (US) — en-US</option>
+                    <option value="en-GB">English (UK) — en-GB</option>
+                    <option value="es-ES">Spanish — es-ES</option>
+                    <option value="fr-FR">French — fr-FR</option>
+                    <option value="de-DE">German — de-DE</option>
+                </select>
+            </div>
+            
+            <hr>
+            <div id="audioSection">
+                <label>🎵 Generated Audio:</label>
+                <div class="audio-player">
+                    <audio id="audioPlayer" controls></audio>
+                </div>
+                <div class="flex-btns" style="margin-top: 12px;">
+                    <button id="downloadBtn" style="background:#2c5f8a;">💾 Download as WAV</button>
+                </div>
+            </div>
+            <div class="info-note" style="margin-top: 1rem;">
+                💡 <strong>How it works:</strong> The model uses a short reference audio (voice cloning) or built‑in voice to synthesize any English text. 
+                For voice cloning, upload a clean WAV file (16kHz/22kHz), and the AI mimics the speaker.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM elements
+    const synthesizeBtn = document.getElementById('synthesizeBtn');
+    const stopAudioBtn = document.getElementById('stopAudioBtn');
+    const ttsText = document.getElementById('ttsText');
+    const audioPromptFile = document.getElementById('audioPromptFile');
+    const voiceModeSelect = document.getElementById('voiceModeSelect');
+    const cloneSection = document.getElementById('cloneSection');
+    const builtinSection = document.getElementById('builtinSection');
+    const builtinVoiceSelect = document.getElementById('builtinVoiceSelect');
+    const qualitySlider = document.getElementById('qualitySlider');
+    const qualityValueDisplay = document.getElementById('qualityValueDisplay');
+    const apiEndpoint = document.getElementById('apiEndpoint');
+    const apiKey = document.getElementById('apiKey');
+    const languageCode = document.getElementById('languageCode');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusDiv = document.getElementById('statusMessage');
+
+    let currentAudioBlob = null;
+
+    // toggle sections based on voice mode
+    function toggleVoiceSections() {
+        const isClone = voiceModeSelect.value === 'clone';
+        cloneSection.style.display = isClone ? 'block' : 'none';
+        builtinSection.style.display = isClone ? 'none' : 'block';
+    }
+    voiceModeSelect.addEventListener('change', toggleVoiceSections);
+    toggleVoiceSections();
+
+    // quality slider display
+    qualitySlider.addEventListener('input', () => {
+        qualityValueDisplay.innerText = `${qualitySlider.value} / 40`;
+    });
+
+    // Show status helper
+    function setStatus(text, isError = false) {
+        statusDiv.innerHTML = isError ? `❌ ${text}` : `🔄 ${text}`;
+        if (isError) console.error(text);
+        else console.log(text);
+    }
+
+    // convert a File (WAV) to base64 or ArrayBuffer (we'll use FormData for HTTP upload)
+    // According to NVIDIA NIM docs: the audio_prompt must be sent as multipart/form-data.
+    async function synthesizeWithNIM() {
+        const text = ttsText.value.trim();
+        if (!text) {
+            setStatus("Please enter some text to synthesize.", true);
+            return;
+        }
+
+        const endpoint = apiEndpoint.value.trim();
+        if (!endpoint) {
+            setStatus("Missing NVIDIA NIM Endpoint URL.", true);
+            return;
+        }
+        const bearerToken = apiKey.value.trim();
+        if (!bearerToken) {
+            setStatus("Missing API Key. Provide a valid NVIDIA API key (Bearer token).", true);
+            return;
+        }
+
+        const isCloneMode = voiceModeSelect.value === 'clone';
+        const language = languageCode.value;
+        const quality = parseInt(qualitySlider.value, 10);
+
+        setStatus("🧠 Requesting NVIDIA NIM (Magpie TTS) ... this may take a few seconds.");
+
+        try {
+            let formData = new FormData();
+            formData.append('text', text);
+            formData.append('language', language);
+            
+            if (isCloneMode) {
+                // voice cloning via audio_prompt
+                if (!audioPromptFile.files || audioPromptFile.files.length === 0) {
+                    setStatus("Please upload a reference audio file (.wav) for voice cloning.", true);
+                    return;
+                }
+                const audioFile = audioPromptFile.files[0];
+                if (!audioFile.type.includes('wav') && !audioFile.name.endsWith('.wav')) {
+                    setStatus("Warning: For best results use WAV file (16-bit mono, 22kHz+). But trying anyway.", false);
+                }
+                formData.append('audio_prompt', audioFile);
+                formData.append('zero_shot_quality', quality.toString());
+                // optional: we do not set transcript for Zeroshot (not required for Magpie Zeroshot)
+            } else {
+                // built-in voice mode
+                const selectedVoice = builtinVoiceSelect.value;
+                formData.append('voice', selectedVoice);
+                // no audio_prompt, quality param is ignored for builtin? according to docs but we still send for safety.
+                formData.append('zero_shot_quality', quality.toString());
+            }
+
+            // Make HTTP request to NVIDIA NIM endpoint (multipart/form-data)
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${bearerToken}`,
+                    // Do not set Content-Type, browser sets correct multipart boundary
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                let errorText = await response.text().catch(() => 'Unknown error');
+                throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+            }
+
+            // The API returns audio/wav content (or binary)
+            const audioBlob = await response.blob();
+            if (audioBlob.size < 100) {
+                throw new Error("Received tiny audio blob, likely empty or error response.");
+            }
+            currentAudioBlob = audioBlob;
+            const audioUrl = URL.createObjectURL(audioBlob);
+            audioPlayer.src = audioUrl;
+            audioPlayer.load();
+            audioPlayer.play().catch(e => console.warn("autoplay blocked", e));
+            setStatus("✅ Synthesis complete! Audio ready. Voice clone success.");
+            
+            // auto trigger download link
+            downloadBtn.onclick = () => {
+                if (currentAudioBlob) {
+                    const a = document.createElement('a');
+                    const url = URL.createObjectURL(currentAudioBlob);
+                    a.href = url;
+                    a.download = `magpie_speech_${Date.now()}.wav`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } else {
+                    setStatus("No audio to download yet.", true);
+                }
+            };
+        } catch (err) {
+            console.error(err);
+            setStatus(`Synthesis error: ${err.message}. Double-check endpoint, API key, and file format.`, true);
+        }
+    }
+
+    // stop playback
+    function stopPlayback() {
+        if (audioPlayer) {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+        }
+        setStatus("⏹️ Playback stopped.");
+    }
+
+    synthesizeBtn.addEventListener('click', synthesizeWithNIM);
+    stopAudioBtn.addEventListener('click', stopPlayback);
+
+    // initial quality display
+    qualityValueDisplay.innerText = `${qualitySlider.value} / 40`;
+
+    // auto-fill dummy API key warning: we don't store but show a note
+    const defaultEndpointWarning = () => {
+        if (apiEndpoint.value === "https://ai.api.nvidia.com/v1/audio/nvidia/magpie-tts-zeroshot") {
+            const infoMsg = document.createElement('div');
+            // Gentle reminder already present
+        }
+    };
+    defaultEndpointWarning();
+
+    // Additional Feature: Validate upload file size
+    audioPromptFile.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (file.size > 15 * 1024 * 1024) {
+                setStatus("Audio file is large (>15MB). Try to shorten to ~5-10 seconds for best cloning quality.", false);
+            } else {
+                setStatus(`Selected audio: ${file.name} (${(file.size/1024).toFixed(1)} KB)`, false);
+            }
+        }
+    });
+    
+    // add small guide for first-time users
+    const showInitialGuide = () => {
+        if (!localStorage.getItem('nim_tts_shown')) {
+            setTimeout(() => {
+                setStatus("📘 TIP: For voice cloning, upload clear .wav (3-10 sec) & set your NVIDIA NIM key. For built‑in voices, just pick a voice.", false);
+                localStorage.setItem('nim_tts_shown', 'true');
+            }, 800);
+        }
+    };
+    showInitialGuide();
+
+    // if any errors on missing API key show guide
+    document.querySelectorAll('input, textarea').forEach(el => {
+        el.addEventListener('focus', () => {});
+    });
+</script>
+</body>
+</html>

@@ -30,8 +30,10 @@ export class TerminalService {
   }
 
   async executePowerShell(command: string, cwd?: string, timeout = 30000) {
-    // Use powershell.exe explicitly and better escaping
-    const psCommand = `powershell.exe -NoProfile -NonInteractive -Command "${command.replace(/"/g, '`"')}"`;
+    // Use Base64 encoding to avoid any escaping issues with quotes, dollar signs, etc.
+    const buffer = Buffer.from(command, 'utf16le');
+    const base64 = buffer.toString('base64');
+    const psCommand = `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${base64}`;
     return this.executeCommand(psCommand, cwd, timeout);
   }
 }

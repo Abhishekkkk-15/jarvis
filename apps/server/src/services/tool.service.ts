@@ -154,31 +154,7 @@ export class ToolService {
 
     // 12. Voice Tools
     this.bindTool('speak_text', async ({ text }) => {
-      const settings = await this.settingsService.getSettings();
-      const v = settings.voice;
-      
-      // Attempt NVIDIA NIM TTS if configured and key is present
-      if (process.env.NVIDIA_API_KEY) {
-        try {
-          await this.ttsService.speak(text);
-          return { success: true, message: `Spoken via NVIDIA NIM: ${text}` };
-        } catch (error: any) {
-          console.warn('NVIDIA NIM TTS failed, falling back to PowerShell:', error.message);
-        }
-      }
-
-      // Fallback: PowerShell command with detailed synthesis settings
-      const command = `
-        Add-Type -AssemblyName System.Speech;
-        $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
-        $speak.Rate = ${v.rate};
-        $speak.Volume = ${v.volume};
-        try { $speak.SelectVoice("${v.voiceId}"); } catch {}
-        $speak.Speak("${text.replace(/"/g, '`"')}");
-      `.replace(/\n/g, ' ');
-
-      await this.terminalService.executePowerShell(command);
-      return { success: true, message: `Spoken via PowerShell (${v.voiceId}): ${text}` };
+      return this.ttsService.speak(text);
     });
 
     // 13. Internet Tools

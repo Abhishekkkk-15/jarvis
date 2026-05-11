@@ -24,4 +24,9 @@ export class SettingsController {
   async updateVoice(@Body() data: Partial<VoiceSettings>) {
     return this.settingsService.updateVoiceSettings(data);
   }
+
+  @Post()
+  async updateSetting(@Body() data: { key: string; value: any }) {
+    return this.settingsService.updateSetting(data.key, data.value);
+  }
 }

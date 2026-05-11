@@ -58,6 +58,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
           updatedMessages[updatedMessages.length - 1] = {
             ...lastMsg,
             content: update.content,
+            isFinal: update.isFinal,
           };
           return { messages: updatedMessages };
         } else {
@@ -69,6 +70,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
                 role: 'assistant',
                 content: update.content,
                 timestamp: new Date(),
+                isFinal: update.isFinal,
               },
             ],
           };

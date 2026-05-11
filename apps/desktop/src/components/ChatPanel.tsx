@@ -21,7 +21,7 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
     
     // Auto-Speak Logic
     const lastMsg = messages[messages.length - 1];
-    if (lastMsg && lastMsg.role === 'assistant' && settings?.voice?.autoSpeak) {
+    if (lastMsg && lastMsg.role === 'assistant' && lastMsg.isFinal && settings?.voice?.autoSpeak) {
       speak(lastMsg.content);
     }
   }, [messages, settings?.voice?.autoSpeak]);

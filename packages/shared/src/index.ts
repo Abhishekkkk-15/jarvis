@@ -5,6 +5,7 @@ export interface Message {
   role: MessageRole;
   content: string;
   timestamp: Date;
+  isFinal?: boolean;
   toolCalls?: ToolCall[];
 }
 
