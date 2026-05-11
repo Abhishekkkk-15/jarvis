@@ -50,15 +50,20 @@ export class AIService {
   }
 
   async getProvider(): Promise<AIProvider> {
-    // 1. Try NVIDIA for embeddings (High Performance)
-    if (process.env.NVIDIA_API_KEY) {
-      const apiKey = await this.getApiKey('NVIDIA_API_KEY') || process.env.NVIDIA_API_KEY;
-      return createNvidiaProvider(apiKey);
+    // 1. Try Groq for chat (highly reliable for tool calling)
+    const groqKey = await this.getApiKey('GROQ_API_KEY') || process.env.GROQ_API_KEY;
+    if (groqKey && groqKey !== 'dummy-key') {
+      return createGroqProvider(groqKey);
     }
 
-    // 2. Fallback to Groq for chat
-    const apiKey = await this.getApiKey('GROQ_API_KEY') || process.env.GROQ_API_KEY || 'dummy-key';
-    return createGroqProvider(apiKey);
+    // 2. Try NVIDIA if Groq is unavailable
+    const nvidiaKey = await this.getApiKey('NVIDIA_API_KEY') || process.env.NVIDIA_API_KEY;
+    if (nvidiaKey) {
+      return createNvidiaProvider(nvidiaKey);
+    }
+
+    // Fallback
+    return createGroqProvider('dummy-key');
   }
 
   private async getApiKey(key: string): Promise<string | null> {

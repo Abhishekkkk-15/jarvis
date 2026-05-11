@@ -72,66 +72,74 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     let iterations = 0;
     const MAX_ITERATIONS = 5;
 
-    while (iterations < MAX_ITERATIONS) {
-      iterations++;
-      const stream = await this.aiService.streamResponse(conversationHistory);
-      
-      let fullContent = '';
-      let toolCalls: any[] = [];
-
-      for await (const chunk of stream) {
-        if (chunk.content) {
-          fullContent += chunk.content;
-          client.emit('chatUpdate', { content: fullContent, isFinal: false });
-        }
+    try {
+      while (iterations < MAX_ITERATIONS) {
+        iterations++;
+        const stream = await this.aiService.streamResponse(conversationHistory);
         
-        if (chunk.additional_kwargs?.tool_calls) {
-          toolCalls = [...toolCalls, ...chunk.additional_kwargs.tool_calls];
-        }
-      }
+        let fullContent = '';
+        let toolCalls: any[] = [];
 
-      // After stream completes, create ONE AIMessage with content and tool calls
-      const aiMessage = new AIMessage({ 
-        content: fullContent || '', 
-        additional_kwargs: toolCalls.length > 0 ? { tool_calls: toolCalls } : {} 
-      });
-      conversationHistory.push(aiMessage);
-
-      if (toolCalls.length > 0) {
-        const toolResults: ToolMessage[] = [];
-        
-        for (const toolCall of toolCalls) {
-          const name = toolCall.function?.name;
-          const args = JSON.parse(toolCall.function?.arguments || '{}');
+        for await (const chunk of stream) {
+          if (chunk.content) {
+            fullContent += chunk.content;
+            client.emit('chatUpdate', { content: fullContent, isFinal: false });
+          }
           
-          const result = await this.executionService.runTool(name, args, toolCall.id, async (id) => {
-            client.emit('chatUpdate', { content: `⏳ Jarvis is using tool: **${name}**...`, isFinal: false });
-            client.emit('toolApprovalRequired', { name, id, args });
-            return new Promise<boolean>((resolve) => {
-              this.pendingApprovals.set(id, { resolve });
-            });
-          });
-
-          client.emit('chatUpdate', { content: `✅ Completed: **${name}**`, isFinal: false });
-          toolResults.push(new ToolMessage({ 
-            tool_call_id: toolCall.id, 
-            content: typeof result === 'string' ? result : JSON.stringify(result) 
-          }));
+          if (chunk.additional_kwargs?.tool_calls) {
+            toolCalls = [...toolCalls, ...chunk.additional_kwargs.tool_calls];
+          }
         }
 
-        conversationHistory.push(...toolResults);
-      } else {
-        // No tool calls, we are done
-        client.emit('chatUpdate', { content: fullContent, isFinal: true });
-        
-        // 3. Save AI response to DB
-        await this.databaseService.db.insert(messages).values({
-          content: fullContent,
-          role: 'assistant',
-          conversationId,
+        // After stream completes, create ONE AIMessage with content and tool calls
+        const aiMessage = new AIMessage({ 
+          content: fullContent || '', 
+          additional_kwargs: toolCalls.length > 0 ? { tool_calls: toolCalls } : {} 
         });
-        break;
+        conversationHistory.push(aiMessage);
+
+        if (toolCalls.length > 0) {
+          const toolResults: ToolMessage[] = [];
+          
+          for (const toolCall of toolCalls) {
+            const name = toolCall.function?.name;
+            const args = JSON.parse(toolCall.function?.arguments || '{}');
+            
+            const result = await this.executionService.runTool(name, args, toolCall.id, async (id) => {
+              client.emit('chatUpdate', { content: `⏳ Jarvis is using tool: **${name}**...`, isFinal: false });
+              client.emit('toolApprovalRequired', { name, id, args });
+              return new Promise<boolean>((resolve) => {
+                this.pendingApprovals.set(id, { resolve });
+              });
+            });
+
+            client.emit('chatUpdate', { content: `✅ Completed: **${name}**`, isFinal: false });
+            toolResults.push(new ToolMessage({ 
+              tool_call_id: toolCall.id, 
+              content: typeof result === 'string' ? result : JSON.stringify(result) 
+            }));
+          }
+
+          conversationHistory.push(...toolResults);
+        } else {
+          // No tool calls, we are done
+          client.emit('chatUpdate', { content: fullContent, isFinal: true });
+          
+          // 3. Save AI response to DB
+          await this.databaseService.db.insert(messages).values({
+            content: fullContent,
+            role: 'assistant',
+            conversationId,
+          });
+          break;
+        }
       }
+    } catch (error: any) {
+      console.error('Chat Error:', error);
+      client.emit('chatUpdate', { 
+        content: `⚠️ **Jarvis Error:** I encountered an issue while processing your request. ${error.message}`, 
+        isFinal: true 
+      });
     }
   }
 

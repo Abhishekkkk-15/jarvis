@@ -12,6 +12,7 @@ export interface AIProviderConfig {
 
 export interface TtsConfig {
   apiKey: string;
+  baseUrl?: string;
   model: string;
   voice?: string;
   audioPrompt?: string;
@@ -110,7 +111,8 @@ export class TtsProvider {
   constructor(private config: TtsConfig) {}
 
   async generateSpeech(text: string): Promise<Buffer> {
-    const response = await fetch('https://integrate.api.nvidia.com/v1/audio/speech', {
+    const url = this.config.baseUrl || 'https://integrate.api.nvidia.com/v1/audio/speech';
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
@@ -119,7 +121,7 @@ export class TtsProvider {
       body: JSON.stringify({
         model: this.config.model,
         input: text,
-        voice: this.config.voice ?? 'Magpie-ZeroShot.Female-1',
+        voice: this.config.voice,
         audio_prompt: this.config.audioPrompt,
         language: 'en-US',
         response_format: 'wav',
@@ -139,6 +141,17 @@ export class TtsProvider {
 export const createNvidiaTtsProvider = (apiKey: string, model = 'nvidia/magpie-tts-zeroshot') => {
   return new TtsProvider({
     apiKey,
+    baseUrl: 'https://integrate.api.nvidia.com/v1/audio/speech',
     model,
+    voice: 'Magpie-ZeroShot.Female-1',
+  });
+};
+
+export const createGroqTtsProvider = (apiKey: string, model = 'canopylabs/orpheus-v1-english', voice?: string) => {
+  return new TtsProvider({
+    apiKey,
+    baseUrl: 'https://api.groq.com/openai/v1/audio/speech',
+    model,
+    voice: voice || 'autumn',
   });
 };

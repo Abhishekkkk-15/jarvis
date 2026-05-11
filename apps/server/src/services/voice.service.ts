@@ -1,15 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { AIService } from './ai.service';
 import { TerminalService } from './terminal.service';
+
+export interface Persona {
+  id: string;
+  name: string;
+  style: string;
+  age: string;
+  voice?: string;
+}
 
 @Injectable()
 export class VoiceService {
   constructor(
+    @Inject(forwardRef(() => AIService))
     private readonly aiService: AIService,
     private readonly terminalService: TerminalService,
   ) {}
 
-  async getVoices() {
+  async getVoices(): Promise<Persona[]> {
     const command = `
       Add-Type -AssemblyName System.Speech;
       $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
@@ -31,6 +40,18 @@ export class VoiceService {
         age: v.Age === 1 ? 'Mature' : 'Adult'
       }));
 
+      if (process.env.GROQ_API_KEY) {
+        const groqVoices = [
+          { id: 'groq-autumn', name: 'The Archivist (Groq)', style: 'Soft / Sophisticated', age: 'Adult', voice: 'autumn' },
+          { id: 'groq-diana', name: 'The Analyst (Groq)', style: 'Clear / Professional', age: 'Adult', voice: 'diana' },
+          { id: 'groq-hannah', name: 'The Executive (Groq)', style: 'Confident / Precise', age: 'Adult', voice: 'hannah' },
+          { id: 'groq-austin', name: 'The Strategist (Groq)', style: 'Deep / Resonant', age: 'Adult', voice: 'austin' },
+          { id: 'groq-daniel', name: 'The Guardian (Groq)', style: 'Warm / Authoritative', age: 'Adult', voice: 'daniel' },
+          { id: 'groq-troy', name: 'The Commander (Groq)', style: 'Bold / Energetic', age: 'Adult', voice: 'troy' },
+        ];
+        mappedVoices.unshift(...groqVoices);
+      }
+
       if (process.env.NVIDIA_API_KEY) {
         mappedVoices.unshift({
           id: 'nvidia-nim',
@@ -47,6 +68,18 @@ export class VoiceService {
         { id: 'Microsoft Zira', name: 'The Analyst', style: 'Feminine / Precise', age: 'Adult' }
       ];
       
+      if (process.env.GROQ_API_KEY) {
+        const groqVoices = [
+          { id: 'groq-autumn', name: 'The Archivist (Groq)', style: 'Soft / Sophisticated', age: 'Adult', voice: 'autumn' },
+          { id: 'groq-diana', name: 'The Analyst (Groq)', style: 'Clear / Professional', age: 'Adult', voice: 'diana' },
+          { id: 'groq-hannah', name: 'The Executive (Groq)', style: 'Confident / Precise', age: 'Adult', voice: 'hannah' },
+          { id: 'groq-austin', name: 'The Strategist (Groq)', style: 'Deep / Resonant', age: 'Adult', voice: 'austin' },
+          { id: 'groq-daniel', name: 'The Guardian (Groq)', style: 'Warm / Authoritative', age: 'Adult', voice: 'daniel' },
+          { id: 'groq-troy', name: 'The Commander (Groq)', style: 'Bold / Energetic', age: 'Adult', voice: 'troy' },
+        ];
+        fallbacks.unshift(...groqVoices);
+      }
+
       if (process.env.NVIDIA_API_KEY) {
         fallbacks.unshift({
           id: 'nvidia-nim',

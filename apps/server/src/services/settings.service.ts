@@ -20,7 +20,7 @@ export interface UserSettings {
 export class SettingsService {
   private readonly defaultSettings: UserSettings = {
     voice: {
-      voiceId: 'Microsoft David Desktop',
+      voiceId: 'groq-autumn',
       rate: 0,
       pitch: 0,
       autoSpeak: false,
