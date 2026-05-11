@@ -17,7 +17,7 @@ export class AIService {
 
   async streamResponse(messages: (HumanMessage | SystemMessage | any)[]): Promise<any> {
     const provider = await this.getProvider();
-    const model = provider.getModel();
+    let model = provider.getModel();
     
     // Get tools in JSON format for the model
     const tools = this.toolService.getRegistry().getJsonSchemas().map(t => ({
@@ -45,8 +45,19 @@ export class AIService {
       4. Introduce yourself as Jarvis when the user greets you for the first time.
     `);
 
-    const boundedModel = (model as any).bind({ tools });
-    return boundedModel.stream([systemPrompt, ...messages]);
+    try {
+      const boundedModel = (model as any).bind({ tools });
+      return boundedModel.stream([systemPrompt, ...messages]);
+    } catch (error: any) {
+      if (error.status === 429 && process.env.NVIDIA_API_KEY) {
+        console.warn('Groq rate limited, falling back to NVIDIA for chat...');
+        const backupProvider = await this.getBackupProvider();
+        const backupModel = backupProvider.getModel();
+        const boundedBackup = (backupModel as any).bind({ tools });
+        return boundedBackup.stream([systemPrompt, ...messages]);
+      }
+      throw error;
+    }
   }
 
   async getProvider(): Promise<AIProvider> {
@@ -64,6 +75,11 @@ export class AIService {
 
     // Fallback
     return createGroqProvider('dummy-key');
+  }
+
+  private async getBackupProvider(): Promise<AIProvider> {
+    const nvidiaKey = await this.getApiKey('NVIDIA_API_KEY') || process.env.NVIDIA_API_KEY;
+    return createNvidiaProvider(nvidiaKey || 'dummy-key');
   }
 
   private async getApiKey(key: string): Promise<string | null> {

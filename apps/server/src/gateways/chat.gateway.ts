@@ -10,6 +10,7 @@ import { AIService } from '../services/ai.service';
 import { ToolService } from '../services/tool.service';
 import { DatabaseService } from '../database/database.service';
 import { messages } from '@jarvis/database';
+import { TtsService } from '../services/tts.service';
 
 import { HumanMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 import { SafetyService } from '../services/safety.service';
@@ -33,6 +34,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly databaseService: DatabaseService,
     private readonly safetyService: SafetyService,
     private readonly executionService: ExecutionService,
+    private readonly ttsService: TtsService,
   ) {
     // Stream all tool events to all connected clients (or specific rooms if needed)
     this.executionService.onEvent((event) => {
@@ -54,25 +56,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Client disconnected: ${client.id}`);
   }
 
+  private processingClients = new Set<string>();
+
   @SubscribeMessage('sendMessage')
   async handleMessage(client: Socket, payload: { content: string; conversationId?: string }) {
-    const DEFAULT_CONVERSATION_ID = '00000000-0000-0000-0000-000000000000';
-    const conversationId = payload.conversationId && payload.conversationId !== 'default' 
-      ? payload.conversationId 
-      : DEFAULT_CONVERSATION_ID;
+    if (!payload.content?.trim() || this.processingClients.has(client.id)) {
+      return;
+    }
 
-    // 1. Save user message to DB
-    await this.databaseService.db.insert(messages).values({
-      content: payload.content,
-      role: 'user',
-      conversationId,
-    });
-
-    const conversationHistory: any[] = [new HumanMessage(payload.content)];
-    let iterations = 0;
-    const MAX_ITERATIONS = 5;
-
+    this.processingClients.add(client.id);
+    
     try {
+      const DEFAULT_CONVERSATION_ID = '00000000-0000-0000-0000-000000000000';
+      const conversationId = payload.conversationId && payload.conversationId !== 'default' 
+        ? payload.conversationId 
+        : DEFAULT_CONVERSATION_ID;
+
+      // 1. Save user message to DB
+      await this.databaseService.db.insert(messages).values({
+        content: payload.content,
+        role: 'user',
+        conversationId,
+      });
+
+      const conversationHistory: any[] = [new HumanMessage(payload.content)];
+      let iterations = 0;
+      const MAX_ITERATIONS = 5;
+
       while (iterations < MAX_ITERATIONS) {
         iterations++;
         const stream = await this.aiService.streamResponse(conversationHistory);
@@ -140,6 +150,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content: `⚠️ **Jarvis Error:** I encountered an issue while processing your request. ${error.message}`, 
         isFinal: true 
       });
+    } finally {
+      this.processingClients.delete(client.id);
     }
   }
 
@@ -154,6 +166,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('speak')
   async handleSpeak(client: Socket, payload: { text: string }) {
-    await this.toolService.executeTool('speak_text', { text: payload.text });
+    await this.ttsService.speak(payload.text);
   }
 }

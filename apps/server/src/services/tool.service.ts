@@ -137,11 +137,6 @@ export class ToolService {
     this.bindTool('search_memory', async ({ query }) => this.memoryService.searchMemories(query));
 
     // 8. AI Tools
-    this.bindTool('summarize_text', async ({ text }) => {
-      const provider = await this.aiService.getProvider();
-      const response = await provider.getModel().invoke(`Summarize this text concisely: ${text}`);
-      return { summary: response.content };
-    });
 
     // 9. Communication Tools (Mocked for now)
     this.bindTool('send_email', async ({ to, subject, body }) => ({ success: true, message: `Email sent to ${to}` }));
@@ -153,9 +148,6 @@ export class ToolService {
     this.bindTool('execute_workflow', async ({ workflowId }) => ({ success: true, status: 'started' }));
 
     // 12. Voice Tools
-    this.bindTool('speak_text', async ({ text }) => {
-      return this.ttsService.speak(text);
-    });
 
     // 13. Internet Tools
     this.bindTool('web_search', async ({ query }) => ({ results: [`https://www.google.com/search?q=${encodeURIComponent(query)}`] }));

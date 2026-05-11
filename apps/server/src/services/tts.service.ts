@@ -30,19 +30,21 @@ export class TtsService {
         
         const tts = createGroqTtsProvider(groqKey, 'canopylabs/orpheus-v1-english', voiceName);
         const audioBuffer = await tts.generateSpeech(text);
+        console.log(`[TTS] Groq Audio: ${audioBuffer.length} bytes`);
 
         const tempDir = path.join(process.cwd(), 'temp', 'audio');
         await fs.mkdir(tempDir, { recursive: true });
-        const tempPath = path.join(tempDir, `voice_${Date.now()}.wav`);
+        const tempPath = path.resolve(path.join(tempDir, `voice_${Date.now()}.wav`));
         await fs.writeFile(tempPath, audioBuffer);
 
         const playCommand = `
           $player = New-Object System.Media.SoundPlayer "${tempPath}";
-          $player.PlaySync();
+          $player.Play();
+          Start-Sleep -Seconds ${Math.max(2, Math.ceil(text.length / 15))};
         `.replace(/\n/g, ' ');
 
         await this.terminalService.executePowerShell(playCommand);
-        setTimeout(() => fs.unlink(tempPath).catch(() => {}), 10000);
+        setTimeout(() => fs.unlink(tempPath).catch(() => {}), 15000);
         return { success: true, provider: 'groq' };
       } catch (error: any) {
         console.warn('Groq TTS failed, falling back:', error.message);
@@ -62,11 +64,12 @@ export class TtsService {
 
         const playCommand = `
           $player = New-Object System.Media.SoundPlayer "${tempPath}";
-          $player.PlaySync();
+          $player.Play();
+          Start-Sleep -Seconds 5;
         `.replace(/\n/g, ' ');
 
         await this.terminalService.executePowerShell(playCommand);
-        setTimeout(() => fs.unlink(tempPath).catch(() => {}), 10000);
+        setTimeout(() => fs.unlink(tempPath).catch(() => {}), 15000);
         return { success: true, provider: 'nvidia' };
       } catch (error: any) {
         if (!error.message.includes('404')) {

@@ -45,10 +45,26 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   availableVoices: [],
 
   connect: () => {
-    const socket = io('http://localhost:3001');
+    const socket = io('http://localhost:3001', {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+    });
 
-    socket.on('connect', () => set({ isConnected: true }));
-    socket.on('disconnect', () => set({ isConnected: false }));
+    socket.on('connect', () => {
+      console.log('Connected to Jarvis Server');
+      set({ isConnected: true });
+    });
+
+    socket.on('disconnect', () => {
+      console.warn('Disconnected from Jarvis Server');
+      set({ isConnected: false });
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Connection Error:', err.message);
+      set({ isConnected: false });
+    });
     
     socket.on('chatUpdate', (update: { content: string, isFinal: boolean }) => {
       set((state) => {
@@ -122,16 +138,38 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   },
 
   sendMessage: (content: string) => {
-    const { socket, messages } = get();
+    const { socket, messages, isConnected } = get();
+    
+    // 1. Local optimistic update
     const userMsg: Message = {
       id: Math.random().toString(),
       role: 'user',
       content,
       timestamp: new Date(),
     };
-
     set({ messages: [...messages, userMsg] });
-    socket?.emit('sendMessage', { content });
+
+    // 2. Check connection
+    if (!socket || !isConnected) {
+      setTimeout(() => {
+        set((state) => ({
+          messages: [
+            ...state.messages,
+            {
+              id: 'err-' + Math.random(),
+              role: 'assistant',
+              content: '⚠️ **Connection Error:** I am currently offline. Please ensure the Jarvis server is running and try again.',
+              timestamp: new Date(),
+              isFinal: true
+            }
+          ]
+        }));
+      }, 500);
+      return;
+    }
+
+    // 3. Emit
+    socket.emit('sendMessage', { content });
   },
   
   setActiveScreen: (screen) => set({ activeScreen: screen }),

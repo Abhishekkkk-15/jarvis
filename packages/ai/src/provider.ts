@@ -76,7 +76,7 @@ export class AIProvider {
   }
 }
 
-export const createGroqProvider = (apiKey: string, model = 'llama-3.3-70b-versatile') => {
+export const createGroqProvider = (apiKey: string, model = 'llama-3.1-8b-instant') => {
   return new AIProvider({
     apiKey,
     baseUrl: 'https://api.groq.com/openai/v1',
@@ -122,15 +122,13 @@ export class TtsProvider {
         model: this.config.model,
         input: text,
         voice: this.config.voice,
-        audio_prompt: this.config.audioPrompt,
-        language: 'en-US',
         response_format: 'wav',
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`NVIDIA TTS Error: ${response.status} - ${error}`);
+      throw new Error(`TTS Error: ${response.status} - ${error}`);
     }
 
     const arrayBuffer = await response.arrayBuffer();

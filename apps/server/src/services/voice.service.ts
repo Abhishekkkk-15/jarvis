@@ -42,12 +42,14 @@ export class VoiceService {
 
       if (process.env.GROQ_API_KEY) {
         const groqVoices = [
-          { id: 'groq-autumn', name: 'The Archivist (Groq)', style: 'Soft / Sophisticated', age: 'Adult', voice: 'autumn' },
-          { id: 'groq-diana', name: 'The Analyst (Groq)', style: 'Clear / Professional', age: 'Adult', voice: 'diana' },
-          { id: 'groq-hannah', name: 'The Executive (Groq)', style: 'Confident / Precise', age: 'Adult', voice: 'hannah' },
-          { id: 'groq-austin', name: 'The Strategist (Groq)', style: 'Deep / Resonant', age: 'Adult', voice: 'austin' },
-          { id: 'groq-daniel', name: 'The Guardian (Groq)', style: 'Warm / Authoritative', age: 'Adult', voice: 'daniel' },
-          { id: 'groq-troy', name: 'The Commander (Groq)', style: 'Bold / Energetic', age: 'Adult', voice: 'troy' },
+          { id: 'groq-autumn-v1', name: 'The Storyteller (Groq)', style: 'Elegant & Soft', age: 'Adult', voice: 'autumn' },
+          { id: 'groq-diana-v1', name: 'The Virtual Guide (Groq)', style: 'Helpful & Clear', age: 'Adult', voice: 'diana' },
+          { id: 'groq-hannah-v1', name: 'The Professional (Groq)', style: 'Corporate & Sharp', age: 'Adult', voice: 'hannah' },
+          { id: 'groq-autumn-v2', name: 'The Librarian (Groq)', style: 'Sophisticated & Calm', age: 'Mature', voice: 'autumn' },
+          { id: 'groq-diana-v2', name: 'The Research Assistant (Groq)', style: 'Analytical & Precise', age: 'Adult', voice: 'diana' },
+          { id: 'groq-austin', name: 'The Strategist (Groq)', style: 'Deep & Resonant', age: 'Adult', voice: 'austin' },
+          { id: 'groq-daniel', name: 'The Guardian (Groq)', style: 'Warm & Authoritative', age: 'Adult', voice: 'daniel' },
+          { id: 'groq-troy', name: 'The Commander (Groq)', style: 'Bold & Energetic', age: 'Adult', voice: 'troy' },
         ];
         mappedVoices.unshift(...groqVoices);
       }
@@ -70,10 +72,12 @@ export class VoiceService {
       
       if (process.env.GROQ_API_KEY) {
         const groqVoices = [
-          { id: 'groq-autumn', name: 'The Archivist (Groq)', style: 'Soft / Sophisticated', age: 'Adult', voice: 'autumn' },
-          { id: 'groq-diana', name: 'The Analyst (Groq)', style: 'Clear / Professional', age: 'Adult', voice: 'diana' },
-          { id: 'groq-hannah', name: 'The Executive (Groq)', style: 'Confident / Precise', age: 'Adult', voice: 'hannah' },
-          { id: 'groq-austin', name: 'The Strategist (Groq)', style: 'Deep / Resonant', age: 'Adult', voice: 'austin' },
+          { id: 'groq-autumn-v1', name: 'The Storyteller (Groq)', style: 'Elegant & Soft', age: 'Adult', voice: 'autumn' },
+          { id: 'groq-diana-v1', name: 'The Virtual Guide (Groq)', style: 'Helpful & Clear', age: 'Adult', voice: 'diana' },
+          { id: 'groq-hannah-v1', name: 'The Professional (Groq)', style: 'Corporate & Sharp', age: 'Adult', voice: 'hannah' },
+          { id: 'groq-autumn-v2', name: 'The Librarian (Groq)', style: 'Sophisticated & Calm', age: 'Mature', voice: 'autumn' },
+          { id: 'groq-diana-v2', name: 'The Research Assistant (Groq)', style: 'Analytical & Precise', age: 'Adult', voice: 'diana' },
+          { id: 'groq-austin', name: 'The Strategist (Groq)', style: 'Deep & Resonant', age: 'Adult', voice: 'austin' },
           { id: 'groq-daniel', name: 'The Guardian (Groq)', style: 'Warm / Authoritative', age: 'Adult', voice: 'daniel' },
           { id: 'groq-troy', name: 'The Commander (Groq)', style: 'Bold / Energetic', age: 'Adult', voice: 'troy' },
         ];
