@@ -50,71 +50,107 @@
     --border: 240 3.7% 15.9%;
     --radius: 0.5rem;
   }
+
+  [data-theme='nordic'] {
+    --background: 210 20% 96%;
+    --foreground: 210 25% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 25% 15%;
+    --primary: 210 60% 45%; /* Nordic Blue */
+    --primary-foreground: 210 20% 98%;
+    --secondary: 210 20% 90%;
+    --secondary-foreground: 210 25% 20%;
+    --muted: 210 15% 94%;
+    --muted-foreground: 210 10% 50%;
+    --border: 210 15% 88%;
+    --radius: 1.5rem;
+  }
 }
 
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: 'Inter', sans-serif;
+  font-family: 'Outfit', 'Inter', sans-serif;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.8s ease, color 0.8s ease;
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
 }
 
 /* Theme-specific Backgrounds */
 [data-theme='calm'] body {
   background-image: 
-    radial-gradient(at 0% 0%, hsla(220, 20%, 50%, 0.03) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(220, 20%, 50%, 0.03) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, hsla(220, 20%, 50%, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(220, 20%, 50%, 0.05) 0px, transparent 50%);
 }
 
 [data-theme='elite'] body {
   background-image: 
-    radial-gradient(at 0% 0%, hsla(190, 90%, 50%, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, hsla(260, 80%, 60%, 0.05) 0px, transparent 50%);
-  overflow: hidden;
+    radial-gradient(at 0% 0%, hsla(190, 90%, 50%, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(260, 80%, 60%, 0.08) 0px, transparent 50%);
 }
 
-/* Common Classes */
+/* Common Premium Classes */
 .premium-glass {
-  @apply bg-white/50 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/5 shadow-sm;
-  transition: all 0.5s ease;
+  background: hsla(var(--background), 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsla(var(--foreground), 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
 }
 
 .premium-card {
-  @apply bg-white dark:bg-zinc-900/50 border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-500 ease-out;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Utility Animations */
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+.premium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.1);
 }
 
-[data-theme='elite'] .scanline::after {
-  content: "";
+/* Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.hover-slide {
+  position: relative;
+  overflow: hidden;
+}
+
+.hover-slide::after {
+  content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(to bottom, transparent 0%, rgba(0, 255, 255, 0.02) 50%, transparent 100%);
-  height: 100px;
-  animation: scanline 8s linear infinite;
-  pointer-events: none;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: hsl(var(--primary));
+  transition: width 0.3s ease;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-/* Glow effects for Elite theme */
-[data-theme='elite'] .glow-text {
-  text-shadow: 0 0 10px hsla(190, 90%, 50%, 0.5);
-}
-
-[data-theme='elite'] .glow-border {
-  box-shadow: 0 0 15px hsla(190, 90%, 50%, 0.2);
+.hover-slide:hover::after {
+  width: 100%;
 }

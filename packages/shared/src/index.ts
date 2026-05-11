@@ -20,7 +20,7 @@ export interface ToolResult {
   result: string;
   isError?: boolean;
 }
-
+  
 export interface UserSettings {
   aiProvider: 'groq' | 'nvidia';
   model: string;

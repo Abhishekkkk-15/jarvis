@@ -100,45 +100,24 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
     <div className="flex-1 flex overflow-hidden bg-background transition-colors duration-700">
       <div className="flex-1 flex flex-col min-w-0 max-w-4xl mx-auto border-x border-black/5 dark:border-white/5 shadow-2xl relative z-10 scanline">
         {/* Subtle Header */}
-        <header className="h-14 flex items-center justify-between px-8 border-b border-black/5 dark:border-white/5 bg-background/50 backdrop-blur-md sticky top-0 z-20">
+        <header className="h-14 flex items-center justify-between px-8 border-b border-black/5 dark:border-white/5 bg-background/30 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
-              <Sparkles className="w-3 h-3 text-primary/60" />
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+              <Sparkles className="w-3 h-3 text-primary" />
             </div>
-            <h2 className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground/80">Jarvis Intelligence</h2>
+            <h2 className="text-[10px] font-bold tracking-[0.25em] uppercase text-foreground/40">Neural Core Active</h2>
           </div>
           
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-full border border-black/5 dark:border-white/5">
-              {[
-                { id: 'calm', icon: Sun, label: 'Calm' },
-                { id: 'elite', icon: Monitor, label: 'Elite' },
-                { id: 'midnight', icon: Moon, label: 'Midnight' }
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTheme(t.id as any)}
-                  className={`p-1.5 rounded-full transition-all ${
-                    theme === t.id 
-                      ? 'bg-card text-primary shadow-sm scale-110' 
-                      : 'text-muted-foreground/40 hover:text-muted-foreground'
-                  }`}
-                  title={t.label}
-                >
-                  <t.icon className="w-3 h-3" />
-                </button>
-              ))}
-            </div>
-            
-            <div className="flex items-center gap-4 text-[10px] text-muted-foreground/40 font-medium tracking-wide">
+            <div className="flex items-center gap-4 text-[10px] text-muted-foreground/30 font-bold tracking-[0.1em]">
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3 h-3" />
-                <span>SECURE</span>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>PROTECTED</span>
               </div>
-              <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/5" />
-              <div className="flex items-center gap-1.5 text-primary/40">
-                <Zap className="w-3 h-3 fill-current" />
-                <span>ACTIVE</span>
+              <div className="w-1 h-1 rounded-full bg-border" />
+              <div className="flex items-center gap-1.5 text-primary/60">
+                <Zap className="w-3.5 h-3.5 fill-current" />
+                <span>STABLE</span>
               </div>
             </div>
           </div>
@@ -196,16 +175,16 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
                   {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
                 
-                <div className={`max-w-[80%] space-y-2 ${msg.role === 'user' ? 'text-right' : ''}`}>
-                  <div className={`px-6 py-4 rounded-[1.5rem] text-sm leading-relaxed ${
+                <div className={`max-w-[85%] space-y-2 ${msg.role === 'user' ? 'text-right' : ''}`}>
+                  <div className={`px-6 py-4 rounded-[1.25rem] text-[13px] leading-relaxed premium-card ${
                     msg.role === 'user' 
-                      ? 'rounded-tr-none bg-secondary/50 text-foreground shadow-sm' 
-                      : 'rounded-tl-none bg-card text-foreground shadow-[0_4px_12px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.2)] border border-black/5 dark:border-white/5'
+                      ? 'rounded-tr-none bg-primary text-primary-foreground border-transparent shadow-lg shadow-primary/10' 
+                      : 'rounded-tl-none glass'
                   }`}>
                     {msg.content}
                   </div>
-                  <div className="text-[10px] text-muted-foreground/40 font-medium px-1 uppercase tracking-tighter">
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="text-[9px] text-muted-foreground/30 font-bold px-1 uppercase tracking-widest">
+                    {msg.role === 'user' ? 'Local User' : 'System Jarvis'} • {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               </motion.div>
@@ -217,43 +196,35 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
         {/* Minimalist Input Area */}
         <div className="p-8 pt-0">
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto group relative">
-            {isListening && (
-              <motion.div 
-                className="absolute -inset-4 bg-primary/5 rounded-[2rem] blur-xl"
-                animate={{ opacity: [0.2, 0.5, 0.2] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-              />
-            )}
-            <div className={`relative flex items-center bg-muted/40 dark:bg-white/5 border rounded-3xl px-6 py-4 transition-all duration-500 ${
+            <div className={`relative flex items-center premium-glass rounded-[2rem] px-6 py-3 transition-all duration-700 ${
               isListening 
-                ? 'border-primary shadow-2xl shadow-primary/20 bg-background' 
-                : 'border-black/5 dark:border-white/5 focus-within:bg-background focus-within:shadow-xl focus-within:shadow-black/5 focus-within:border-primary/20'
+                ? 'ring-2 ring-primary shadow-2xl shadow-primary/20' 
+                : 'focus-within:ring-1 focus-within:ring-primary/20'
             }`}>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isListening ? "Listening to your voice..." : "Compose a request..."}
-                className="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder:text-muted-foreground/40 font-light"
+                placeholder={isListening ? "Listening..." : "Type your command..."}
+                className="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder:text-muted-foreground/30 font-medium py-2"
               />
               <button
                 type="submit"
                 disabled={!input.trim()}
-                className="w-10 h-10 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-20 shadow-lg shadow-primary/20"
+                className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-10 shadow-lg shadow-primary/20"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
             
-            <div className="mt-6 flex justify-center items-center gap-10 text-[9px] text-muted-foreground/30 uppercase tracking-[0.3em] font-semibold">
-              <div className="flex items-center gap-3">
-                <kbd className="px-2 py-1 bg-muted rounded border border-black/5">⌘K</kbd>
-                <span>Commands</span>
+            <div className="mt-4 flex justify-center items-center gap-8 text-[8px] text-muted-foreground/20 uppercase tracking-[0.4em] font-bold">
+              <div className="flex items-center gap-2">
+                <kbd className="px-1.5 py-0.5 bg-muted/50 rounded border border-border">⌘K</kbd>
+                <span>Command Bar</span>
               </div>
-              <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/5" />
-              <div className="flex items-center gap-3">
-                <kbd className={`px-3 py-1 rounded border border-black/5 transition-colors ${isListening ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted'}`}>SPACE</kbd>
-                <span className={isListening ? 'text-primary' : ''}>{isListening ? 'Hold to talk' : 'Voice Mode'}</span>
+              <div className="flex items-center gap-2">
+                <kbd className={`px-1.5 py-0.5 rounded border border-border transition-all ${isListening ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50'}`}>SPACE</kbd>
+                <span className={isListening ? 'text-primary' : ''}>{isListening ? 'Live Recognition' : 'Hold to Speak'}</span>
               </div>
             </div>
           </form>
