@@ -133,6 +133,22 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
       // We could also show a global modal or a notification here
     });
 
+    socket.on('audioPlayback', (payload: { audioBase64: string }) => {
+      try {
+        set({ isSpeaking: true });
+        const audio = new Audio(`data:audio/wav;base64,${payload.audioBase64}`);
+        audio.onended = () => set({ isSpeaking: false });
+        audio.onerror = () => set({ isSpeaking: false });
+        audio.play().catch((err) => {
+          console.error('Audio playback failed:', err);
+          set({ isSpeaking: false });
+        });
+      } catch (e) {
+        console.error('Audio setup failed:', e);
+        set({ isSpeaking: false });
+      }
+    });
+
     set({ socket });
   },
 

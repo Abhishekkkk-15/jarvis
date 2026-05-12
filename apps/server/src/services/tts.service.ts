@@ -32,20 +32,8 @@ export class TtsService {
         const audioBuffer = await tts.generateSpeech(text);
         console.log(`[TTS] Groq Audio: ${audioBuffer.length} bytes`);
 
-        const tempDir = path.join(process.cwd(), 'temp', 'audio');
-        await fs.mkdir(tempDir, { recursive: true });
-        const tempPath = path.resolve(path.join(tempDir, `voice_${Date.now()}.wav`));
-        await fs.writeFile(tempPath, audioBuffer);
-
-        const playCommand = `
-          $player = New-Object System.Media.SoundPlayer "${tempPath}";
-          $player.Play();
-          Start-Sleep -Seconds ${Math.max(2, Math.ceil(text.length / 15))};
-        `.replace(/\n/g, ' ');
-
-        await this.terminalService.executePowerShell(playCommand);
-        setTimeout(() => fs.unlink(tempPath).catch(() => {}), 15000);
-        return { success: true, provider: 'groq' };
+        const audioBase64 = audioBuffer.toString('base64');
+        return { success: true, provider: 'groq', audioBase64 };
       } catch (error: any) {
         console.warn('Groq TTS failed, falling back:', error.message);
       }
@@ -57,20 +45,8 @@ export class TtsService {
         const tts = createNvidiaTtsProvider(nvidiaKey);
         const audioBuffer = await tts.generateSpeech(text);
 
-        const tempDir = path.join(process.cwd(), 'temp', 'audio');
-        await fs.mkdir(tempDir, { recursive: true });
-        const tempPath = path.join(tempDir, `voice_${Date.now()}.wav`);
-        await fs.writeFile(tempPath, audioBuffer);
-
-        const playCommand = `
-          $player = New-Object System.Media.SoundPlayer "${tempPath}";
-          $player.Play();
-          Start-Sleep -Seconds 5;
-        `.replace(/\n/g, ' ');
-
-        await this.terminalService.executePowerShell(playCommand);
-        setTimeout(() => fs.unlink(tempPath).catch(() => {}), 15000);
-        return { success: true, provider: 'nvidia' };
+        const audioBase64 = audioBuffer.toString('base64');
+        return { success: true, provider: 'nvidia', audioBase64 };
       } catch (error: any) {
         if (!error.message.includes('404')) {
           console.warn('NVIDIA TTS failed:', error.message);

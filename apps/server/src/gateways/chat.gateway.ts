@@ -166,6 +166,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('speak')
   async handleSpeak(client: Socket, payload: { text: string }) {
-    await this.ttsService.speak(payload.text);
+    const result = await this.ttsService.speak(payload.text);
+    if (result && result.audioBase64) {
+      client.emit('audioPlayback', { audioBase64: result.audioBase64 });
+    }
   }
 }
