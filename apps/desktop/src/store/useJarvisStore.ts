@@ -20,6 +20,7 @@ interface JarvisState {
   theme: 'elite' | 'calm' | 'midnight' | 'nordic';
   isListening: boolean;
   isSpeaking: boolean;
+  isPersistentMode: boolean;
   settings: any;
   availableVoices: string[];
   connect: () => void;
@@ -28,6 +29,7 @@ interface JarvisState {
   setTheme: (theme: JarvisState['theme']) => void;
   setIsListening: (isListening: boolean) => void;
   setIsSpeaking: (isSpeaking: boolean) => void;
+  setIsPersistentMode: (isPersistentMode: boolean) => void;
   fetchSettings: () => Promise<void>;
   updateVoiceSettings: (voice: any) => Promise<void>;
   fetchVoices: () => Promise<void>;
@@ -44,6 +46,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   theme: 'calm',
   isListening: false,
   isSpeaking: false,
+  isPersistentMode: false,
   settings: null,
   availableVoices: [],
 
@@ -198,6 +201,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   },
   setIsListening: (isListening) => set({ isListening }),
   setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
+  setIsPersistentMode: (isPersistentMode) => set({ isPersistentMode }),
   
   fetchSettings: async () => {
     const res = await fetch('http://localhost:3001/settings');

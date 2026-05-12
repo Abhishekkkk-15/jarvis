@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun } from 'lucide-react';
+import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun, Mic, MicOff } from 'lucide-react';
 import { Message } from '@jarvis/shared';
 import { ToolTimeline } from './tools/ToolTimeline';
 import { useJarvisStore } from '../store/useJarvisStore';
@@ -13,7 +13,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
-  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings } = useJarvisStore();
+  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode } = useJarvisStore();
   const endRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -36,19 +36,68 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
       recognitionRef.current.interimResults = true;
 
       recognitionRef.current.onresult = (event: any) => {
-        const transcript = Array.from(event.results)
+        const resultsArray = Array.from(event.results);
+        const transcript = resultsArray
           .map((result: any) => result[0])
           .map((result: any) => result.transcript)
           .join('');
         setInput(transcript);
+
+        const state = useJarvisStore.getState();
+        if (state.isPersistentMode) {
+          const lastResult: any = resultsArray[resultsArray.length - 1];
+          if (lastResult && lastResult.isFinal) {
+            const finalPhrase = lastResult[0].transcript.trim();
+            const lowerPhrase = finalPhrase.toLowerCase();
+            if (lowerPhrase.startsWith('jarvis') || lowerPhrase.includes('jarvis')) {
+              setTimeout(() => {
+                onSendMessage(finalPhrase);
+                setInput('');
+              }, 200);
+            } else {
+              // Ignore extraneous background speech
+              setTimeout(() => setInput(''), 400);
+            }
+          }
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        const state = useJarvisStore.getState();
+        if (state.isPersistentMode) {
+          setTimeout(() => {
+            try {
+              recognitionRef.current?.start();
+            } catch (e) {}
+          }, 100);
+        } else {
+          setIsListening(false);
+        }
       };
 
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
-        setIsListening(false);
+        const state = useJarvisStore.getState();
+        if (!state.isPersistentMode) {
+          setIsListening(false);
+        }
       };
     }
   }, []);
+
+  useEffect(() => {
+    if (isPersistentMode && recognitionRef.current && !isListening) {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e) {}
+    } else if (!isPersistentMode && recognitionRef.current && isListening) {
+      try {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      } catch (e) {}
+    }
+  }, [isPersistentMode]);
 
   const startVoice = () => {
     if (recognitionRef.current && !isListening) {
@@ -71,13 +120,15 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && e.target === document.body) {
+      const state = useJarvisStore.getState();
+      if (!state.isPersistentMode && e.code === 'Space' && e.target === document.body) {
         e.preventDefault();
         startVoice();
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      const state = useJarvisStore.getState();
+      if (!state.isPersistentMode && e.code === 'Space') {
         stopVoice();
       }
     };
@@ -196,16 +247,30 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isListening ? "Listening..." : "Type your command..."}
+                placeholder={isPersistentMode ? "Say 'Jarvis...' to command" : (isListening ? "Listening..." : "Type your command...")}
                 className="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder:text-muted-foreground/30 font-medium py-2"
               />
-              <button
-                type="submit"
-                disabled={!input.trim()}
-                className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-10 shadow-lg shadow-primary/20"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPersistentMode(!isPersistentMode)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg ${
+                    isPersistentMode
+                      ? 'bg-red-500/20 text-red-500 border border-red-500/30 shadow-red-500/10'
+                      : 'bg-black/5 dark:bg-white/5 text-muted-foreground hover:text-foreground'
+                  }`}
+                  title={isPersistentMode ? "Disable Hands-Free Mode" : "Enable Hands-Free Continuous Mode"}
+                >
+                  {isPersistentMode ? <Mic className="w-4 h-4 animate-pulse" /> : <MicOff className="w-4 h-4 opacity-50" />}
+                </button>
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-10 shadow-lg shadow-primary/20"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             
             <div className="mt-4 flex justify-center items-center gap-8 text-[8px] text-muted-foreground/20 uppercase tracking-[0.4em] font-bold">
@@ -215,7 +280,9 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
               </div>
               <div className="flex items-center gap-2">
                 <kbd className={`px-1.5 py-0.5 rounded border border-border transition-all ${isListening ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50'}`}>SPACE</kbd>
-                <span className={isListening ? 'text-primary' : ''}>{isListening ? 'Live Recognition' : 'Hold to Speak'}</span>
+                <span className={isListening ? 'text-primary' : ''}>
+                  {isPersistentMode ? 'Continuous Mode Active' : (isListening ? 'Live Recognition' : 'Hold to Speak')}
+                </span>
               </div>
             </div>
           </form>
