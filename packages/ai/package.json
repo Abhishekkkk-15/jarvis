@@ -16,12 +16,14 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@langchain/openai": "^0.0.10",
     "@langchain/core": "^0.1.0",
+    "@langchain/openai": "^0.0.10",
     "langchain": "^0.1.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
+    "i": "^0.3.7",
     "typescript": "^5.0.0"
   }
 }

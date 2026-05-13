@@ -31,6 +31,7 @@
     "typescript": "^5.0.0",
     "vite": "^4.4.0",
     "vite-plugin-electron": "^0.29.1",
-    "vite-plugin-electron-renderer": "^0.14.5"
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "jarvis-server": "workspace:*"
   }
 }
