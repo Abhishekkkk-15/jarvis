@@ -1,0 +1,36 @@
+{
+  "appId": "com.jarvis.desktop",
+  "productName": "Jarvis",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "../../apps/server/dist",
+      "to": "server",
+      "filter": ["**/*"]
+    }
+  ],
+  "win": {
+    "target": "nsis",
+    "icon": "public/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "runAfterFinish": true
+  },
+  "mac": {
+    "target": "dmg",
+    "icon": "public/icon.icns"
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "public/icon.png"
+  }
+}

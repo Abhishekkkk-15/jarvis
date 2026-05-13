@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "clean": "rimraf dist",
     "dev": "node dist/apps/server/src/main"
   },
   "dependencies": {

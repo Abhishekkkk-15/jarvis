@@ -41,3 +41,5 @@ yarn-error.log*
 # Workspace
 .antigravity
 .gemini
+
+./apps/desktop/release/win-unpacked/

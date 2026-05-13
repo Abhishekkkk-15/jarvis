@@ -4,6 +4,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "clean": "rimraf dist",
     "generate": "drizzle-kit generate:pg",
     "push": "drizzle-kit push:pg",
     "studio": "drizzle-kit studio"

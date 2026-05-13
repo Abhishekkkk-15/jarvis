@@ -1,9 +1,49 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import { spawn, ChildProcess } from 'child_process';
 
 // The built directory of the renderer process
 const DIST_PATH = path.join(__dirname, '../dist');
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
+
+let serverProcess: ChildProcess | null = null;
+
+function startBackendServer() {
+  // In dev mode, the backend is started separately (e.g., via turbo dev)
+  if (VITE_DEV_SERVER_URL) return;
+
+  // In packaged .exe: server is bundled at resources/server/
+  const serverPath = path.join(
+    process.resourcesPath,
+    'server',
+    'apps',
+    'server',
+    'src',
+    'main.js'
+  );
+
+  console.log('[Backend] Launching server from:', serverPath);
+
+  serverProcess = spawn(process.execPath, [serverPath], {
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  serverProcess.stdout?.on('data', (data) => {
+    console.log(`[Server] ${data.toString().trim()}`);
+  });
+
+  serverProcess.stderr?.on('data', (data) => {
+    console.error(`[Server Error] ${data.toString().trim()}`);
+  });
+
+  serverProcess.on('exit', (code) => {
+    console.log(`[Backend] Server exited with code ${code}`);
+  });
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -24,6 +64,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  startBackendServer();
   createWindow();
 
   app.on('activate', () => {
@@ -34,6 +75,11 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+  // Kill the backend server cleanly when the app closes
+  if (serverProcess && !serverProcess.killed) {
+    serverProcess.kill();
+    serverProcess = null;
+  }
   if (process.platform !== 'darwin') {
     app.quit();
   }

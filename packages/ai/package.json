@@ -11,6 +11,10 @@
       "default": "./dist/index.js"
     }
   },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "clean": "rimraf dist"
+  },
   "dependencies": {
     "@langchain/openai": "^0.0.10",
     "@langchain/core": "^0.1.0",

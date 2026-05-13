@@ -11,6 +11,10 @@
       "default": "./dist/index.js"
     }
   },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "clean": "rimraf dist"
+  },
   "dependencies": {
     "zod": "^3.22.0",
     "zod-to-json-schema": "^3.22.0"

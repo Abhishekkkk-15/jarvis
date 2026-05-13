@@ -10,6 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "declaration": true,
+    "noEmit": true,
     "lib": ["ESNext", "DOM", "ESNext.Disposable"],
     "baseUrl": ".",
     "paths": {

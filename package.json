@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "clean": "turbo run clean",
+    "clean:all": "turbo run clean && rimraf apps/desktop/dist-electron apps/desktop/release",
     "lint": "turbo run lint",
     "db:generate": "pnpm --filter database generate",
     "db:push": "pnpm --filter database push"
@@ -15,6 +17,7 @@
     "@langchain/core": "^0.1.0",
     "playwright": "^1.40.0",
     "prettier": "^3.0.0",
+    "rimraf": "^5.0.10",
     "turbo": "latest",
     "typescript": "^5.0.0"
   },
