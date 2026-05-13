@@ -91,17 +91,23 @@ export class AIService {
     `);
 
     try {
+      const isNvidia = provider.config?.baseUrl?.includes('nvidia');
+      if (isNvidia) {
+        // NVIDIA endpoints expect clean conversational prompt layers and will natively generate tag strings via instructions
+        return await model.stream([systemPrompt, ...messages]);
+      }
       const boundedModel = (model as any).bind({ tools });
-      return boundedModel.stream([systemPrompt, ...messages]);
+      return await boundedModel.stream([systemPrompt, ...messages]);
     } catch (error: any) {
       if (error.status === 429 && process.env.NVIDIA_API_KEY) {
         console.warn('Groq rate limited, falling back to NVIDIA for chat...');
         const backupProvider = await this.getBackupProvider();
         const backupModel = backupProvider.getModel();
-        const boundedBackup = (backupModel as any).bind({ tools });
-        return boundedBackup.stream([systemPrompt, ...messages]);
+        return await backupModel.stream([systemPrompt, ...messages]);
       }
-      throw error;
+      // Ultimate absolute resilient fallback: if native tools template throws, stream directly as pure text reasoning generator
+      console.warn('Native tool template binding returned error, streaming standard text payload fallback:', error.message);
+      return await model.stream([systemPrompt, ...messages]);
     }
   }
 

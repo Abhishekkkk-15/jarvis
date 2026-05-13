@@ -14,7 +14,7 @@ interface ChatPanelProps {
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
   const [showOperationFeed, setShowOperationFeed] = React.useState(true);
-  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode, clearMessages } = useJarvisStore();
+  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode, clearMessages, autoApproveTools, setAutoApproveTools } = useJarvisStore();
   const agentName = settings?.agentName || 'Jarvis';
   const endRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -261,6 +261,18 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => setAutoApproveTools(!autoApproveTools)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg ${
+                    autoApproveTools
+                      ? 'bg-green-500/20 text-green-500 border border-green-500/30 shadow-green-500/10'
+                      : 'bg-black/5 dark:bg-white/5 text-muted-foreground hover:text-foreground'
+                  }`}
+                  title={autoApproveTools ? "Disable Automatic Tasks Permission" : "Enable Auto-Permit All Operations"}
+                >
+                  <ShieldCheck className={`w-4 h-4 transition-all ${autoApproveTools ? 'opacity-100 scale-110' : 'opacity-50'}`} />
+                </button>
+                <button
+                  type="button"
                   onClick={() => setIsPersistentMode(!isPersistentMode)}
                   className={`w-10 h-10 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg ${
                     isPersistentMode
@@ -299,6 +311,7 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
                 <kbd className={`px-1.5 py-0.5 rounded border border-border transition-all ${isListening ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50'}`}>SPACE</kbd>
                 <span className={isListening ? 'text-primary' : ''}>
                   {isPersistentMode ? 'Continuous Mode Active' : (isListening ? 'Live Recognition' : 'Hold to Speak')}
+                  {autoApproveTools && <span className="text-green-500 font-extrabold lowercase ml-1 tracking-widest">[auto-permit]</span>}
                 </span>
               </div>
             </div>

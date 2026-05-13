@@ -33,8 +33,10 @@ class MockEmbeddings extends Embeddings {
 export class AIProvider {
   private model: BaseChatModel;
   private embeddings: Embeddings;
+  public readonly config: AIProviderConfig;
 
   constructor(config: AIProviderConfig) {
+    this.config = config;
     this.model = new ChatOpenAI({
       openAIApiKey: config.apiKey,
       configuration: {

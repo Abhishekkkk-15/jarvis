@@ -37,6 +37,8 @@ interface JarvisState {
   fetchVoices: () => Promise<void>;
   speak: (text: string) => void;
   approveTool: (id: string, approved: boolean) => void;
+  autoApproveTools: boolean;
+  setAutoApproveTools: (autoApproveTools: boolean) => void;
 }
 
 export const useJarvisStore = create<JarvisState>((set, get) => ({
@@ -50,6 +52,8 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   isListening: false,
   isSpeaking: false,
   isPersistentMode: false,
+  autoApproveTools: false,
+  setAutoApproveTools: (autoApproveTools) => set({ autoApproveTools }),
   settings: null,
   availableVoices: [],
 
@@ -130,6 +134,12 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
     });
 
     socket.on('toolApprovalRequired', (event: { name: string, id: string, args: any }) => {
+      const { autoApproveTools, approveTool } = get();
+      if (autoApproveTools) {
+        approveTool(event.id, true);
+        return;
+      }
+
       set((state) => ({
         toolEvents: state.toolEvents.map((te) =>
           te.id === event.id
@@ -137,7 +147,6 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
             : te
         ),
       }));
-      // We could also show a global modal or a notification here
     });
 
     socket.on('audioPlayback', (payload: { audioBase64: string }) => {

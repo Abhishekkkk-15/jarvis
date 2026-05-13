@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Minus, Square, X } from 'lucide-react';
+import { Minus, Square, X, ShieldCheck } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { ChatPanel } from './components/ChatPanel';
 import { CommandBar } from './components/CommandBar';
@@ -13,7 +13,7 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 
 export default function App() {
-  const { messages, sendMessage, isConnected, activeScreen, settings, fetchSettings } = useJarvisStore();
+  const { messages, sendMessage, isConnected, activeScreen, settings, fetchSettings, autoApproveTools, setAutoApproveTools } = useJarvisStore();
   const agentName = settings?.agentName || 'Jarvis';
   const { isListening, isSpeaking, startListening, stopListening, speak } = useVoiceManager();
   const [showCommandBar, setShowCommandBar] = useState(false);
@@ -101,6 +101,19 @@ export default function App() {
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold text-primary tracking-widest uppercase opacity-60 pointer-events-none">
           {agentName}
         </div>
+
+        {/* Floating Auto-Approve Overlay Trigger */}
+        <button
+          onClick={() => setAutoApproveTools(!autoApproveTools)}
+          onMouseEnter={() => (window as any).electron?.ipcRenderer?.send('set-ignore-mouse-events', false)}
+          onMouseLeave={() => (window as any).electron?.ipcRenderer?.send('set-ignore-mouse-events', true)}
+          className={`absolute bottom-2 right-2 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all z-20 ${
+            autoApproveTools ? 'bg-green-500/20 text-green-500 border border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-black/20 dark:bg-white/10 text-white/40 hover:text-white/80'
+          }`}
+          title={autoApproveTools ? "Disable Automatic Tasks Permission" : "Enable Auto-Permit All Operations"}
+        >
+          <ShieldCheck className="w-3 h-3" />
+        </button>
       </div>
     );
   }
