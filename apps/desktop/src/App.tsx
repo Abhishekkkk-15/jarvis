@@ -17,6 +17,31 @@ export default function App() {
   const agentName = settings?.agentName || 'Jarvis';
   const { isListening, isSpeaking, startListening, stopListening, speak } = useVoiceManager();
   const [showCommandBar, setShowCommandBar] = useState(false);
+  const [appMode, setAppMode] = useState<'desktop' | 'pulse'>('desktop');
+
+  useEffect(() => {
+    const removeListener = (window as any).electron?.ipcRenderer?.on('set-mode', (newMode: 'desktop' | 'pulse') => {
+      setAppMode(newMode);
+    });
+    return () => {
+      if (removeListener) removeListener();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (appMode === 'pulse') {
+      document.body.classList.add('mode-pulse');
+      // Automatically activate Background Hands-Free Listening engine
+      if (!isListening) {
+        startListening();
+      }
+    } else {
+      document.body.classList.remove('mode-pulse');
+      if (isListening) {
+        stopListening();
+      }
+    }
+  }, [appMode, isListening, startListening, stopListening]);
 
   useEffect(() => {
     if (isConnected) {
@@ -50,6 +75,35 @@ export default function App() {
         return <ChatPanel messages={messages} onSendMessage={sendMessage} />;
     }
   };
+
+  if (appMode === 'pulse') {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center relative overflow-hidden bg-transparent select-none">
+        {/* Animated Expanding Ripple Layers */}
+        <div className="w-32 h-32 absolute flex items-center justify-center pointer-events-none">
+          <div className="animate-neural-ring" style={{ animationDelay: '0s' }} />
+          <div className="animate-neural-ring" style={{ animationDelay: '1.2s' }} />
+          <div className="animate-neural-ring" style={{ animationDelay: '2.4s' }} />
+        </div>
+
+        {/* Central Core Element - Intercepts Clicks when hovered to restore full view */}
+        <div 
+          onClick={() => (window as any).electron?.ipcRenderer?.send('window-restore', {})}
+          onMouseEnter={() => (window as any).electron?.ipcRenderer?.send('set-ignore-mouse-events', false)}
+          onMouseLeave={() => (window as any).electron?.ipcRenderer?.send('set-ignore-mouse-events', true)}
+          className={`w-12 h-12 rounded-full ${isSpeaking ? 'bg-amber-500 animate-bounce' : isListening ? 'bg-red-500 animate-pulse' : 'bg-primary'} flex items-center justify-center animate-neural-core cursor-pointer relative z-10 hover:scale-125 transition-all duration-300 border border-primary-foreground/20 shadow-lg group`}
+          title={isSpeaking ? "Jarvis Speaking..." : isListening ? "Hands-Free Listening Active..." : "Click to Restore Jarvis"}
+        >
+          <div className="w-4 h-4 rounded-full bg-primary-foreground/90 group-hover:bg-primary-foreground transition-colors animate-pulse" />
+        </div>
+
+        {/* Tiny Floating Connection Specs */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold text-primary tracking-widest uppercase opacity-60 pointer-events-none">
+          {agentName}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">

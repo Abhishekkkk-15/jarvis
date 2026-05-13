@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'node:path';
 import { spawn, ChildProcess } from 'child_process';
 
@@ -45,10 +45,14 @@ function startBackendServer() {
   });
 }
 
+let lastBounds: Electron.Rectangle | null = null;
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    transparent: true,
+    frame: false,
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 15, y: 15 },
     webPreferences: {
@@ -91,9 +95,57 @@ ipcMain.handle('execute-tool', async (event, { name, args }) => {
   return { success: true };
 });
 
+let isPulseMode = false;
+
 ipcMain.on('window-minimize', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
-  win?.minimize();
+  if (!win) return;
+  
+  isPulseMode = true;
+  
+  // Store previous desktop layout dimensions smartly
+  lastBounds = win.getBounds();
+  
+  // Inform UI to render neural pulse overlay state
+  win.webContents.send('set-mode', 'pulse');
+  
+  // Calculate precise bottom-right workspace layout coordinates dynamically
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  const compactSize = 120;
+  const x = width - compactSize - 20;
+  const y = height - compactSize - 20;
+  
+  // Shrink to compact fully animated overlay emblem bounds pinned at bottom-right
+  win.setBounds({ x, y, width: compactSize, height: compactSize });
+  win.setAlwaysOnTop(true, 'floating');
+  
+  // Enable absolute touch-through passthrough directly to OS underlying context
+  win.setIgnoreMouseEvents(true, { forward: true });
+});
+
+ipcMain.on('set-ignore-mouse-events', (event, ignore) => {
+  if (!isPulseMode) return;
+  const win = BrowserWindow.fromWebContents(event.sender);
+  win?.setIgnoreMouseEvents(ignore, { forward: true });
+});
+
+ipcMain.on('window-restore', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return;
+  
+  isPulseMode = false;
+  win.setAlwaysOnTop(false);
+  win.setIgnoreMouseEvents(false);
+  
+  if (lastBounds) {
+    win.setBounds(lastBounds);
+  } else {
+    win.setSize(1200, 800);
+    win.center();
+  }
+  
+  win.webContents.send('set-mode', 'desktop');
 });
 
 ipcMain.on('window-maximize', (event) => {
