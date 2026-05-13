@@ -18,6 +18,7 @@ import { ExecutionService } from '../services/execution.service';
 import { DesktopService } from '../services/desktop.service';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { eq, asc } from 'drizzle-orm';
 
 @WebSocketGateway({
   cors: {
@@ -76,14 +77,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     try {
 
-      // 1. Save user message to DB
+      // 1. Fetch previous historical context messages from DB to enable continuous multi-turn memory persistence
+      const pastDbMessages = await this.databaseService.db
+        .select()
+        .from(messages)
+        .where(eq(messages.conversationId, conversationId as any))
+        .orderBy(asc(messages.createdAt));
+
+      const conversationHistory: any[] = pastDbMessages.map((msg) => {
+        return msg.role === 'user' 
+          ? new HumanMessage(msg.content) 
+          : new AIMessage(msg.content);
+      });
+
+      // 2. Save current user message to DB
       await this.databaseService.db.insert(messages).values({
         content: payload.content,
         role: 'user',
         conversationId,
       });
 
-      const conversationHistory: any[] = [];
+      // 3. Attach current latest payload (with ambient visual buffer if requested)
       if (payload.includeScreenSense) {
         try {
           const tempDir = path.join(process.cwd(), 'temp');
