@@ -190,8 +190,12 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
       return;
     }
 
-    // 3. Emit
-    socket.emit('sendMessage', { content });
+    // 3. Emit payload with ambient physical screen context flag if voice mode is activated
+    const { isPersistentMode, isListening } = get();
+    socket.emit('sendMessage', { 
+      content, 
+      includeScreenSense: isPersistentMode || isListening 
+    });
   },
   
   setActiveScreen: (screen) => set({ activeScreen: screen }),

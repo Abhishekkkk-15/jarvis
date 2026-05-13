@@ -18,11 +18,11 @@ export class TtsService {
   async speak(text: string) {
     const settings = await this.settingsService.getSettings();
     const v = settings.voice;
-    const groqKey = process.env.GROQ_API_KEY;
-    const nvidiaKey = process.env.NVIDIA_API_KEY;
+    const groqKey = (settings as any).GROQ_API_KEY || process.env.GROQ_API_KEY;
+    const nvidiaKey = (settings as any).NVIDIA_API_KEY || process.env.NVIDIA_API_KEY;
 
-    // 1. Try Groq Premium TTS (High Performance) - Selected or Default
-    if (groqKey && (v.voiceId.startsWith('groq-') || v.voiceId === 'nvidia-nim')) {
+    // 1. Try Groq Premium TTS (High Performance) - Default route requested by user
+    if (groqKey) {
       try {
         const voices = await this.voiceService.getVoices();
         const persona = voices.find((p: Persona) => p.id === v.voiceId);

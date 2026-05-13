@@ -62,25 +62,24 @@ export class AIService {
   }
 
   async getProvider(): Promise<AIProvider> {
-    // 1. Try Groq for chat (highly reliable for tool calling)
+    // Primary: Use NVIDIA models for automation, vision, and text generation tasks
+    const nvidiaKey = await this.getApiKey('NVIDIA_API_KEY') || process.env.NVIDIA_API_KEY;
+    if (nvidiaKey && nvidiaKey !== 'dummy-key') {
+      return createNvidiaProvider(nvidiaKey);
+    }
+
+    // Fallback secondary
     const groqKey = await this.getApiKey('GROQ_API_KEY') || process.env.GROQ_API_KEY;
     if (groqKey && groqKey !== 'dummy-key') {
       return createGroqProvider(groqKey);
     }
 
-    // 2. Try NVIDIA if Groq is unavailable
-    const nvidiaKey = await this.getApiKey('NVIDIA_API_KEY') || process.env.NVIDIA_API_KEY;
-    if (nvidiaKey) {
-      return createNvidiaProvider(nvidiaKey);
-    }
-
-    // Fallback
-    return createGroqProvider('dummy-key');
+    return createNvidiaProvider('dummy-key');
   }
 
   private async getBackupProvider(): Promise<AIProvider> {
-    const nvidiaKey = await this.getApiKey('NVIDIA_API_KEY') || process.env.NVIDIA_API_KEY;
-    return createNvidiaProvider(nvidiaKey || 'dummy-key');
+    const groqKey = await this.getApiKey('GROQ_API_KEY') || process.env.GROQ_API_KEY;
+    return createGroqProvider(groqKey || 'dummy-key');
   }
 
   private async getApiKey(key: string): Promise<string | null> {

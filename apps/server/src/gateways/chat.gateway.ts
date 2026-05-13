@@ -14,8 +14,10 @@ import { TtsService } from '../services/tts.service';
 
 import { HumanMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 import { SafetyService } from '../services/safety.service';
-
 import { ExecutionService } from '../services/execution.service';
+import { DesktopService } from '../services/desktop.service';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 @WebSocketGateway({
   cors: {
@@ -35,6 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly safetyService: SafetyService,
     private readonly executionService: ExecutionService,
     private readonly ttsService: TtsService,
+    private readonly desktopService: DesktopService,
   ) {
     // Stream all tool events to all connected clients (or specific rooms if needed)
     this.executionService.onEvent((event) => {
@@ -59,7 +62,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private processingClients = new Set<string>();
 
   @SubscribeMessage('sendMessage')
-  async handleMessage(client: Socket, payload: { content: string; conversationId?: string }) {
+  async handleMessage(client: Socket, payload: { content: string; conversationId?: string; includeScreenSense?: boolean }) {
     if (!payload.content?.trim() || this.processingClients.has(client.id)) {
       return;
     }
@@ -80,7 +83,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         conversationId,
       });
 
-      const conversationHistory: any[] = [new HumanMessage(payload.content)];
+      const conversationHistory: any[] = [];
+      if (payload.includeScreenSense) {
+        try {
+          const tempDir = path.join(process.cwd(), 'temp');
+          await fs.mkdir(tempDir, { recursive: true });
+          const filePath = path.join(tempDir, `sense_${Date.now()}.png`);
+          await this.desktopService.screenshot(filePath);
+          const base64Data = await fs.readFile(filePath, { encoding: 'base64' });
+          
+          client.emit('chatUpdate', { 
+            content: `👁️ *Persistent Ambient Screen Sense attached desktop visual buffer.*`, 
+            isFinal: false 
+          });
+
+          conversationHistory.push(new HumanMessage({
+            content: [
+              { type: 'text', text: payload.content },
+              { type: 'image_url', image_url: { url: `data:image/png;base64,${base64Data}` } }
+            ]
+          }));
+
+          fs.unlink(filePath).catch(() => {});
+        } catch (err) {
+          console.warn('Screen Sense Capture Failed:', err);
+          conversationHistory.push(new HumanMessage(payload.content));
+        }
+      } else {
+        conversationHistory.push(new HumanMessage(payload.content));
+      }
       let iterations = 0;
       const MAX_ITERATIONS = 5;
 
