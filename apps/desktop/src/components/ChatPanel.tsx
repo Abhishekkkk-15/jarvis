@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun, Mic, MicOff, RotateCcw } from 'lucide-react';
+import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun, Mic, MicOff, RotateCcw, PanelRight, PanelRightClose } from 'lucide-react';
 import { Message } from '@jarvis/shared';
 import { ToolTimeline } from './tools/ToolTimeline';
 import { useJarvisStore } from '../store/useJarvisStore';
@@ -13,6 +13,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
+  const [showOperationFeed, setShowOperationFeed] = React.useState(true);
   const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode, clearMessages } = useJarvisStore();
   const agentName = settings?.agentName || 'Jarvis';
   const endRef = useRef<HTMLDivElement>(null);
@@ -305,15 +306,38 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
         </div>
       </div>
 
-      {/* Elegant Sidebar */}
-      <div className="w-80 border-l border-black/5 dark:border-white/5 bg-background/50 hidden lg:flex flex-col">
-        <div className="p-6 pb-2">
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/40 px-2">Operation Feed</h3>
+      {/* Elegant Operation Feed Sidebar */}
+      {showOperationFeed ? (
+        <div className="w-80 border-l border-black/5 dark:border-white/5 bg-background/50 hidden lg:flex flex-col relative transition-all duration-300 flex-shrink-0">
+          <div className="p-6 pb-2 flex items-center justify-between">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/40 px-2">Operation Feed</h3>
+            <button 
+              type="button"
+              onClick={() => setShowOperationFeed(false)}
+              className="text-muted-foreground/40 hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+              title="Hide Operation Feed"
+            >
+              <PanelRightClose className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden p-4">
+            <ToolTimeline />
+          </div>
         </div>
-        <div className="flex-1 overflow-hidden p-4">
-          <ToolTimeline />
+      ) : (
+        <div 
+          onClick={() => setShowOperationFeed(true)}
+          className="hidden lg:flex flex-col items-center justify-center border-l border-black/5 dark:border-white/5 bg-background/20 hover:bg-background/60 transition-all w-10 cursor-pointer select-none group"
+          title="Show Operation Feed"
+        >
+          <div className="flex flex-col items-center gap-4 py-8 opacity-40 group-hover:opacity-100 transition-opacity">
+            <PanelRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground group-hover:text-primary transition-colors" style={{ writingMode: 'vertical-rl' } as React.CSSProperties}>
+              FEED
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
