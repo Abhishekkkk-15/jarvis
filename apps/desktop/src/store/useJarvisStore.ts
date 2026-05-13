@@ -63,6 +63,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
     socket.on('connect', () => {
       console.log('Connected to Jarvis Server');
       set({ isConnected: true });
+      get().fetchSettings().catch(() => {});
     });
 
     socket.on('disconnect', () => {
@@ -219,9 +220,22 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   setIsPersistentMode: (isPersistentMode) => set({ isPersistentMode }),
   
   fetchSettings: async () => {
-    const res = await fetch('http://localhost:3001/settings');
-    const settings = await res.json();
-    set({ settings });
+    try {
+      const res = await fetch('http://localhost:3001/settings');
+      if (res.ok) {
+        const settings = await res.json();
+        set({ settings });
+        if (settings?.theme) {
+          set({ theme: settings.theme });
+          document.documentElement.setAttribute('data-theme', settings.theme);
+        }
+      }
+    } catch (e) {
+      console.warn('Backend settings service starting up, retrying fetch...');
+      setTimeout(() => {
+        get().fetchSettings();
+      }, 1000);
+    }
   },
 
   updateVoiceSettings: async (voice) => {

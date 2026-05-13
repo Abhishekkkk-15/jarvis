@@ -6,6 +6,7 @@ import { useJarvisStore } from './store/useJarvisStore'
 
 // Initialize the store and connect to the server
 useJarvisStore.getState().connect()
+useJarvisStore.getState().fetchSettings()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

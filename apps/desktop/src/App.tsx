@@ -13,10 +13,16 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 
 export default function App() {
-  const { messages, sendMessage, isConnected, activeScreen, settings } = useJarvisStore();
+  const { messages, sendMessage, isConnected, activeScreen, settings, fetchSettings } = useJarvisStore();
   const agentName = settings?.agentName || 'Jarvis';
   const { isListening, isSpeaking, startListening, stopListening, speak } = useVoiceManager();
   const [showCommandBar, setShowCommandBar] = useState(false);
+
+  useEffect(() => {
+    if (isConnected) {
+      fetchSettings();
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
