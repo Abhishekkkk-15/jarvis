@@ -218,10 +218,10 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
                 </div>
                 
                 <div className={`max-w-[85%] space-y-2 ${msg.role === 'user' ? 'text-right' : ''}`}>
-                  <div className={`px-6 py-4 rounded-[1.25rem] text-[13px] leading-relaxed premium-card ${
+                  <div className={`px-6 py-4 rounded-[1.25rem] text-[13px] leading-relaxed ${
                     msg.role === 'user' 
-                      ? 'rounded-tr-none bg-primary text-primary-foreground border-transparent shadow-lg shadow-primary/10' 
-                      : 'rounded-tl-none glass'
+                      ? 'rounded-tr-none bg-primary text-primary-foreground shadow-lg shadow-primary/10 font-medium border border-primary/20' 
+                      : 'rounded-tl-none premium-card font-normal'
                   }`}>
                     {msg.content}
                   </div>

@@ -43,6 +43,7 @@ export class AIService {
       2. You are on a WINDOWS machine. Use Windows-compatible commands (e.g., "dir" or "cd" instead of "ls" or "pwd" in Shell, or use PowerShell).
       3. If a tool fails, explain the error to the user and try an alternative approach if possible.
       4. Introduce yourself as Jarvis when the user greets you for the first time.
+      5. CRITICAL: NEVER output raw string tags like <function=open_url>...</function> or <tool>...</tool> in your text response. To invoke a tool, ALWAYS use the official native JSON tool_calls protocol specified by the API.
     `);
 
     try {

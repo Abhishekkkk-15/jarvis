@@ -76,7 +76,7 @@ export class AIProvider {
   }
 }
 
-export const createGroqProvider = (apiKey: string, model = 'llama-3.1-8b-instant') => {
+export const createGroqProvider = (apiKey: string, model = 'llama-3.3-70b-versatile') => {
   return new AIProvider({
     apiKey,
     baseUrl: 'https://api.groq.com/openai/v1',

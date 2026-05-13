@@ -66,11 +66,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.processingClients.add(client.id);
     
+    const DEFAULT_CONVERSATION_ID = '00000000-0000-0000-0000-000000000000';
+    const conversationId = payload.conversationId && payload.conversationId !== 'default' 
+      ? payload.conversationId 
+      : DEFAULT_CONVERSATION_ID;
+
     try {
-      const DEFAULT_CONVERSATION_ID = '00000000-0000-0000-0000-000000000000';
-      const conversationId = payload.conversationId && payload.conversationId !== 'default' 
-        ? payload.conversationId 
-        : DEFAULT_CONVERSATION_ID;
 
       // 1. Save user message to DB
       await this.databaseService.db.insert(messages).values({
@@ -146,10 +147,70 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     } catch (error: any) {
       console.error('Chat Error:', error);
-      client.emit('chatUpdate', { 
-        content: `⚠️ **Jarvis Error:** I encountered an issue while processing your request. ${error.message}`, 
-        isFinal: true 
-      });
+      const failedGen = error.error?.failed_generation || error.failed_generation;
+
+      if (failedGen && typeof failedGen === 'string') {
+        // Extract clean text content
+        const cleanContent = failedGen.replace(/<function[\s\S]*?>[\s\S]*?<\/function>|<function[\s\S]*?>/g, '').trim();
+        
+        // Match tag signatures e.g. <function=open_url {"url": "..."}></function>
+        const tagMatch = failedGen.match(/<function=([^\s>]+)\s*([^>]*)>/);
+
+        if (tagMatch) {
+          const name = tagMatch[1];
+          let argsStr = tagMatch[2].trim();
+          if (argsStr.endsWith('/')) argsStr = argsStr.slice(0, -1).trim();
+          
+          let args = {};
+          try {
+            const parsed = JSON.parse(argsStr || '{}');
+            args = Array.isArray(parsed) ? parsed[0] : parsed;
+          } catch (e) {}
+
+          client.emit('chatUpdate', { 
+            content: `${cleanContent}\n\n⚙️ *Intercepting native tool command: **${name}**...*`, 
+            isFinal: false 
+          });
+
+          const callId = `intercept-${Date.now()}`;
+          try {
+            const result = await this.executionService.runTool(name, args, callId, async (id) => {
+              client.emit('toolApprovalRequired', { name, id, args });
+              return new Promise<boolean>((resolve) => {
+                this.pendingApprovals.set(id, { resolve });
+              });
+            });
+
+            const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+            const finalMsg = `${cleanContent}\n\n✅ **Executed ${name}:**\n\`\`\`json\n${resultStr.slice(0, 600)}\n\`\`\``;
+            
+            client.emit('chatUpdate', { content: finalMsg, isFinal: true });
+            
+            await this.databaseService.db.insert(messages).values({
+              content: finalMsg,
+              role: 'assistant',
+              conversationId,
+            });
+            return;
+          } catch (execErr: any) {
+            client.emit('chatUpdate', { 
+              content: `${cleanContent}\n\n❌ **Execution failed:** ${execErr.message}`, 
+              isFinal: true 
+            });
+            return;
+          }
+        }
+
+        client.emit('chatUpdate', { 
+          content: cleanContent || "I parsed your query but encountered an internal schema mismatch.", 
+          isFinal: true 
+        });
+      } else {
+        client.emit('chatUpdate', { 
+          content: `⚠️ **Jarvis Error:** I encountered an issue while processing your request. ${error.message}`, 
+          isFinal: true 
+        });
+      }
     } finally {
       this.processingClients.delete(client.id);
     }
