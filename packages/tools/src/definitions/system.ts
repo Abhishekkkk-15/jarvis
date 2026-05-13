@@ -47,5 +47,11 @@ export const systemTools: ToolDefinition[] = [
     description: 'Shuts down the computer (Requires Approval)',
     parameters: z.object({ force: z.boolean().optional() }),
     execute: async () => ({}),
+  },
+  {
+    name: 'open_application',
+    description: 'Opens a system application, executable, or software program by name or absolute path',
+    parameters: z.object({ nameOrPath: z.string() }),
+    execute: async () => ({}),
   }
 ];

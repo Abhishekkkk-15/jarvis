@@ -141,7 +141,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         for await (const chunk of stream) {
           if (chunk.content) {
             fullContent += chunk.content;
-            client.emit('chatUpdate', { content: fullContent, isFinal: false });
+            const displayContent = fullContent.replace(/<function[\s\S]*?>[\s\S]*?<\/function>|<function[\s\S]*?>/g, '').trim();
+            client.emit('chatUpdate', { content: displayContent || "⚙️ *Preparing automation parameters...*", isFinal: false });
           }
           
           if (chunk.additional_kwargs?.tool_calls) {
@@ -180,8 +181,61 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
           conversationHistory.push(...toolResults);
         } else {
-          // No tool calls, we are done
-          client.emit('chatUpdate', { content: fullContent, isFinal: true });
+          // Check if the model outputted a literal string tag signature natively
+          const tagMatch = fullContent.match(/<function=([^\s>]+)\s*([^>]*)>/);
+          if (tagMatch) {
+            const name = tagMatch[1];
+            let argsStr = tagMatch[2].trim();
+            if (argsStr.endsWith('/')) argsStr = argsStr.slice(0, -1).trim();
+            
+            let args = {};
+            try {
+              const parsed = JSON.parse(argsStr || '{}');
+              args = Array.isArray(parsed) ? parsed[0] : parsed;
+            } catch (e) {}
+
+            const cleanContent = fullContent.replace(/<function[\s\S]*?>[\s\S]*?<\/function>|<function[\s\S]*?>/g, '').trim();
+
+            client.emit('chatUpdate', { 
+              content: `${cleanContent}\n\n⚙️ *Executing native automation block: **${name}**...*`, 
+              isFinal: false 
+            });
+
+            const callId = `native-${Date.now()}`;
+            try {
+              const result = await this.executionService.runTool(name, args, callId, async (id) => {
+                client.emit('toolApprovalRequired', { name, id, args });
+                return new Promise<boolean>((resolve) => {
+                  this.pendingApprovals.set(id, { resolve });
+                });
+              });
+
+              const resultStr = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+              const finalMsg = `${cleanContent}\n\n✅ **Successfully executed ${name}**`;
+              
+              client.emit('chatUpdate', { content: finalMsg, isFinal: true });
+              
+              await this.databaseService.db.insert(messages).values({
+                content: finalMsg,
+                role: 'assistant',
+                conversationId,
+              });
+              break;
+            } catch (execErr: any) {
+              const finalMsg = `${cleanContent}\n\n❌ **Execution failed:** ${execErr.message}`;
+              client.emit('chatUpdate', { content: finalMsg, isFinal: true });
+              await this.databaseService.db.insert(messages).values({
+                content: finalMsg,
+                role: 'assistant',
+                conversationId,
+              });
+              break;
+            }
+          }
+
+          // No literal string tags found, purely standard chat answer
+          const cleanDisplay = fullContent.replace(/<function[\s\S]*?>[\s\S]*?<\/function>|<function[\s\S]*?>/g, '').trim();
+          client.emit('chatUpdate', { content: cleanDisplay || fullContent, isFinal: true });
           
           // 3. Save AI response to DB
           await this.databaseService.db.insert(messages).values({

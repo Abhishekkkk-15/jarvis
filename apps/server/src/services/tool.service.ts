@@ -49,6 +49,36 @@ export class ToolService {
       return { success: true };
     });
 
+    this.bindTool('open_application', async ({ nameOrPath }) => {
+      console.log(`[System] Launching application: ${nameOrPath}`);
+      let target = nameOrPath.trim();
+      const lower = target.toLowerCase();
+      
+      const aliasMap: Record<string, string> = {
+        'vscode': 'code',
+        'visual studio code': 'code',
+        'chrome': 'chrome',
+        'google chrome': 'chrome',
+        'edge': 'msedge',
+        'microsoft edge': 'msedge',
+        'notepad': 'notepad',
+        'calculator': 'calc',
+        'calc': 'calc',
+        'explorer': 'explorer',
+        'file explorer': 'explorer',
+        'word': 'winword',
+        'excel': 'excel',
+        'powerpoint': 'powerpnt',
+      };
+
+      if (aliasMap[lower]) {
+        target = aliasMap[lower];
+      }
+
+      await this.terminalService.executeCommand(`start "" "${target}"`);
+      return { success: true, message: `Successfully launched application: ${target}` };
+    });
+
     // 2. Filesystem Tools
     this.bindTool('list_directory', async ({ path }) => this.fileService.listDirectory(path));
     this.bindTool('read_file', async ({ path }) => ({ content: await this.fileService.readFile(path) }));
