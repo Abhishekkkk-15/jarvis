@@ -1,0 +1,44 @@
+name: Build and Release Executable
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger workflow on version tags, e.g., v1.0.0
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write # Needed to create GitHub Releases
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Backend Server tier
+        run: pnpm --filter jarvis-server build
+
+      - name: Build & Package Desktop Executable
+        run: pnpm --filter jarvis-desktop build
+
+      - name: Create GitHub Release and Upload Installer
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/desktop/release/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
