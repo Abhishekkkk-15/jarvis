@@ -48,6 +48,25 @@ export class ToolService {
       memory: Math.round(os.totalmem() / (1024 * 1024 * 1024)) + 'GB',
     }));
 
+    this.bindTool('clipboard_read', async () => {
+      try {
+        const output = await this.terminalService.executePowerShell('Get-Clipboard');
+        return { text: output?.success && output?.stdout ? output.stdout : '' };
+      } catch (err: any) {
+        return { error: err.message };
+      }
+    });
+
+    this.bindTool('clipboard_write', async ({ text }) => {
+      try {
+        const safeText = text.replace(/'/g, "''");
+        await this.terminalService.executePowerShell(`Set-Clipboard -Value '${safeText}'`);
+        return { success: true, message: 'Successfully copied content to system clipboard.' };
+      } catch (err: any) {
+        return { error: err.message };
+      }
+    });
+
     this.bindTool('notification_send', async ({ title, message }) => {
       console.log(`[Notification] ${title}: ${message}`);
       return { success: true };
@@ -89,6 +108,14 @@ export class ToolService {
     this.bindTool('write_file', async ({ path, content }) => this.fileService.writeFile(path, content));
     this.bindTool('delete_file', async ({ path }) => this.fileService.deleteFile(path));
     this.bindTool('search_files', async ({ query, root }) => ({ results: await this.fileService.searchFiles(query, root) }));
+    this.bindTool('move_file', async ({ source, destination }) => {
+      try {
+        await fs.rename(source, destination);
+        return { success: true, message: `Successfully moved item to ${destination}` };
+      } catch (err: any) {
+        return { error: err.message };
+      }
+    });
 
     // 3. Terminal Tools
     this.bindTool('execute_shell', async ({ command, cwd, timeout }) => this.terminalService.executeCommand(command, cwd, timeout));
@@ -182,6 +209,16 @@ export class ToolService {
 
     // 10. Development Tools
     this.bindTool('git_status', async ({ path }) => this.terminalService.executeCommand('git status', path));
+    this.bindTool('git_commit', async ({ path, message }) => {
+      const safeMsg = message.replace(/"/g, '\\"');
+      return this.terminalService.executeCommand(`git commit -m "${safeMsg}"`, path);
+    });
+    this.bindTool('run_tests', async ({ command }) => {
+      return this.terminalService.executeCommand(command || 'npm test');
+    });
+    this.bindTool('search_codebase', async ({ query }) => {
+      return this.terminalService.executeCommand(`git grep -n "${query}"`);
+    });
 
     // 11. Workflow Tools (Trigger legacy workflow)
     this.bindTool('execute_workflow', async ({ workflowId }) => {
@@ -227,6 +264,15 @@ export class ToolService {
 
     // 13. Internet Tools
     this.bindTool('web_search', async ({ query }) => ({ results: [`https://www.google.com/search?q=${encodeURIComponent(query)}`] }));
+    this.bindTool('fetch_url', async ({ url }) => {
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        return { content: text.slice(0, 15000), status: res.status };
+      } catch (err: any) {
+        return { error: err.message };
+      }
+    });
 
     // 14. Database Tools
     this.bindTool('inspect_schema', async () => ({ schema: 'conversations, messages, workflows, workflow_runs, settings' }));
