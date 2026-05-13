@@ -158,7 +158,7 @@ export const createGroqTtsProvider = (
     baseUrl: 'https://api.groq.com/openai/v1/audio/speech',
     model,
     voice: voice || 'autumn',
-    audioPrompt: audioPrompt || "Speak in a highly warm, friendly, awesome, and natural human tone. Friendly enthusiasm with gentle, perfect empathy.",
+    audioPrompt: audioPrompt || "Speak in a highly expressive, authentic, and wonderfully relatable human voice. Embody deep emotional resonance, gentle cadence, warm pauses, natural laughter inflections, and empathetic tone like a real close friend.",
   });
 };
 
