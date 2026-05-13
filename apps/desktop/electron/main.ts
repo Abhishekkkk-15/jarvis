@@ -42,6 +42,24 @@ app.on('window-all-closed', () => {
 // IPC Handlers
 ipcMain.handle('execute-tool', async (event, { name, args }) => {
   console.log(`Executing tool: ${name}`, args);
-  // Implementation for nut.js or Playwright would go here
   return { success: true };
+});
+
+ipcMain.on('window-minimize', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  win?.minimize();
+});
+
+ipcMain.on('window-maximize', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win?.isMaximized()) {
+    win?.unmaximize();
+  } else {
+    win?.maximize();
+  }
+});
+
+ipcMain.on('window-close', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  win?.close();
 });
