@@ -11,6 +11,7 @@ import { ToolService } from '../services/tool.service';
 import { DatabaseService } from '../database/database.service';
 import { messages } from '@jarvis/database';
 import { TtsService } from '../services/tts.service';
+import { SttService } from '../services/stt.service';
 
 import { HumanMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 import { SafetyService } from '../services/safety.service';
@@ -38,6 +39,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly safetyService: SafetyService,
     private readonly executionService: ExecutionService,
     private readonly ttsService: TtsService,
+    private readonly sttService: SttService,
     private readonly desktopService: DesktopService,
   ) {
     // Stream all tool events to all connected clients (or specific rooms if needed)
@@ -275,6 +277,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const result = await this.ttsService.speak(payload.text);
     if (result && result.audioBase64) {
       client.emit('audioPlayback', { audioBase64: result.audioBase64 });
+    }
+  }
+
+  @SubscribeMessage('transcribeAudio')
+  async handleTranscribeAudio(client: Socket, payload: { audioBase64: string; filename?: string }) {
+    try {
+      const buffer = Buffer.from(payload.audioBase64, 'base64');
+      const transcript = await this.sttService.transcribeAudio(buffer, payload.filename || 'audio.webm');
+      client.emit('transcriptionResult', { transcript });
+      return { transcript };
+    } catch (error: any) {
+      console.error('STT Transcription Error:', error.message);
+      client.emit('transcriptionError', { error: error.message });
+      return { error: error.message };
     }
   }
 }

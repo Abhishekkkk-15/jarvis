@@ -153,3 +153,47 @@ export const createGroqTtsProvider = (apiKey: string, model = 'canopylabs/orpheu
     voice: voice || 'autumn',
   });
 };
+
+export interface SttConfig {
+  apiKey: string;
+  baseUrl?: string;
+  model: string;
+}
+
+export class SttProvider {
+  constructor(private config: SttConfig) {}
+
+  async transcribeAudio(audioBuffer: Buffer, filename = 'audio.wav'): Promise<string> {
+    const url = this.config.baseUrl || 'https://api.groq.com/openai/v1/audio/transcriptions';
+    
+    const formData = new FormData();
+    const blob = new Blob([new Uint8Array(audioBuffer)], { type: filename.endsWith('.webm') ? 'audio/webm' : 'audio/wav' });
+    formData.append('file', blob, filename);
+    formData.append('model', this.config.model);
+    formData.append('response_format', 'json');
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.apiKey}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`STT Error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    return data.text;
+  }
+}
+
+export const createGroqSttProvider = (apiKey: string, model = 'whisper-large-v3') => {
+  return new SttProvider({
+    apiKey,
+    baseUrl: 'https://api.groq.com/openai/v1/audio/transcriptions',
+    model,
+  });
+};

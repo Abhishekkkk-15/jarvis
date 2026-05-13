@@ -14,6 +14,7 @@ import { ExecutionService } from './services/execution.service';
 import { SettingsService } from './services/settings.service';
 import { VoiceService } from './services/voice.service';
 import { TtsService } from './services/tts.service';
+import { SttService } from './services/stt.service';
 
 import { WorkflowController } from './controllers/workflow.controller';
 import { HistoryController } from './controllers/history.controller';
@@ -37,7 +38,8 @@ import { SettingsController } from './controllers/settings.controller';
     ExecutionService,
     SettingsService,
     VoiceService,
-    TtsService
+    TtsService,
+    SttService
   ],
 })
 export class AppModule {}
