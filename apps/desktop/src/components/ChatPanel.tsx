@@ -1,10 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun, Mic, MicOff, RotateCcw, PanelRight, PanelRightClose } from 'lucide-react';
+import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun, Mic, MicOff, RotateCcw, PanelRight, PanelRightClose, VolumeX } from 'lucide-react';
 import { Message } from '@jarvis/shared';
 import { ToolTimeline } from './tools/ToolTimeline';
 import { useJarvisStore } from '../store/useJarvisStore';
 import { NeuralPulse } from './NeuralPulse';
+
+// Global cache Set persisting across tab navigations and component remount cycles to guarantee one-time TTS playback execution per message
+const globalSpokenMessageIds = new Set<string>();
 
 interface ChatPanelProps {
   messages: Message[];
@@ -14,21 +17,20 @@ interface ChatPanelProps {
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
   const [showOperationFeed, setShowOperationFeed] = React.useState(true);
-  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode, clearMessages, autoApproveTools, setAutoApproveTools } = useJarvisStore();
+  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, stopSpeaking, settings, isPersistentMode, setIsPersistentMode, clearMessages, autoApproveTools, setAutoApproveTools } = useJarvisStore();
   const agentName = settings?.agentName || 'Jarvis';
   const endRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const spokenIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
     
-    // Auto-Speak Logic - Guaranteed strictly once per message
+    // Auto-Speak Logic - Guaranteed strictly once per message across remounts
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.role === 'assistant' && lastMsg.isFinal && settings?.voice?.autoSpeak) {
       const msgId = lastMsg.id || lastMsg.content;
-      if (!spokenIdsRef.current.has(msgId)) {
-        spokenIdsRef.current.add(msgId);
+      if (!globalSpokenMessageIds.has(msgId)) {
+        globalSpokenMessageIds.add(msgId);
         speak(lastMsg.content);
       }
     }
@@ -259,6 +261,16 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
                 className="flex-1 bg-transparent border-none focus:outline-none text-sm placeholder:text-muted-foreground/30 font-medium py-2"
               />
               <div className="flex items-center gap-2">
+                {isSpeaking && (
+                  <button
+                    type="button"
+                    onClick={stopSpeaking}
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-500/20 text-amber-500 border border-amber-500/30 shadow-lg shadow-amber-500/10 hover:scale-105 active:scale-95 transition-all animate-pulse"
+                    title="Stop Jarvis Speaking"
+                  >
+                    <VolumeX className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setAutoApproveTools(!autoApproveTools)}

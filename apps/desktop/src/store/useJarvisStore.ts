@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { Message } from '@jarvis/shared';
 
+// Track the currently active audio object instance reference across views to support mid-way speech truncation
+let currentAudioInstance: HTMLAudioElement | null = null;
+
 interface ToolEvent {
   id: string;
   name: string;
@@ -36,6 +39,7 @@ interface JarvisState {
   updateVoiceSettings: (voice: any) => Promise<void>;
   fetchVoices: () => Promise<void>;
   speak: (text: string) => void;
+  stopSpeaking: () => void;
   approveTool: (id: string, approved: boolean) => void;
   autoApproveTools: boolean;
   setAutoApproveTools: (autoApproveTools: boolean) => void;
@@ -151,13 +155,31 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
 
     socket.on('audioPlayback', (payload: { audioBase64: string }) => {
       try {
+        // Stop any active previous speech to ensure crisp synchronization
+        get().stopSpeaking();
+
         set({ isSpeaking: true });
         const audio = new Audio(`data:audio/wav;base64,${payload.audioBase64}`);
-        audio.onended = () => set({ isSpeaking: false });
-        audio.onerror = () => set({ isSpeaking: false });
+        currentAudioInstance = audio;
+
+        audio.onended = () => {
+          if (currentAudioInstance === audio) {
+            set({ isSpeaking: false });
+            currentAudioInstance = null;
+          }
+        };
+        audio.onerror = () => {
+          if (currentAudioInstance === audio) {
+            set({ isSpeaking: false });
+            currentAudioInstance = null;
+          }
+        };
         audio.play().catch((err) => {
           console.error('Audio playback failed:', err);
-          set({ isSpeaking: false });
+          if (currentAudioInstance === audio) {
+            set({ isSpeaking: false });
+            currentAudioInstance = null;
+          }
         });
       } catch (e) {
         console.error('Audio setup failed:', e);
@@ -166,6 +188,17 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
     });
 
     set({ socket });
+  },
+
+  stopSpeaking: () => {
+    if (currentAudioInstance) {
+      try {
+        currentAudioInstance.pause();
+        currentAudioInstance.currentTime = 0;
+      } catch (e) {}
+      currentAudioInstance = null;
+    }
+    set({ isSpeaking: false });
   },
 
   approveTool: (id: string, approved: boolean) => {
