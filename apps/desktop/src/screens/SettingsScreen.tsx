@@ -9,6 +9,7 @@ export const SettingsScreen = () => {
   
   // API Gateways
   const [keys, setKeys] = useState({ groq: '', nvidia: '' });
+  const [agentNameInput, setAgentNameInput] = useState('');
   
   // Communication Integrations State
   const [commConfig, setCommConfig] = useState({
@@ -29,6 +30,14 @@ export const SettingsScreen = () => {
     fetchSettings();
   }, []);
 
+  useEffect(() => {
+    if (settings?.agentName) {
+      setAgentNameInput(settings.agentName);
+    } else if (settings && !settings.agentName) {
+      setAgentNameInput('Jarvis');
+    }
+  }, [settings?.agentName]);
+
   const saveSetting = async (key: string, value: string) => {
     try {
       await fetch('http://localhost:3001/settings', {
@@ -44,11 +53,14 @@ export const SettingsScreen = () => {
     
     if (keys.groq) await saveSetting('GROQ_API_KEY', keys.groq);
     if (keys.nvidia) await saveSetting('NVIDIA_API_KEY', keys.nvidia);
+    if (agentNameInput.trim()) await saveSetting('agentName', agentNameInput.trim());
     
     // Save communication configs
     await saveSetting('SMTP_HOST', commConfig.smtpHost);
     await saveSetting('TARGET_EMAIL', commConfig.targetEmail);
     if (commConfig.slackWebhook) await saveSetting('SLACK_WEBHOOK_URL', commConfig.slackWebhook);
+    
+    await fetchSettings();
     
     setTimeout(() => {
       setSaveStatus('All subsystems synchronized successfully.');
@@ -145,6 +157,25 @@ export const SettingsScreen = () => {
                 </div>
                 <div className="premium-glass p-6 rounded-[1.5rem] border border-black/5 dark:border-white/5">
                   <VoiceSettings />
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
+                  <User size={14} /> Agent Identity & Custom Wake Word
+                </div>
+                <div className="premium-glass p-5 rounded-2xl border border-black/5 dark:border-white/5 space-y-2">
+                  <label className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Companion Name / Wake Directive</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Jarvis, Friday, Ordis" 
+                    className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-primary/20 rounded-xl px-4 py-2.5 text-xs outline-none transition-all font-medium" 
+                    value={agentNameInput}
+                    onChange={(e) => setAgentNameInput(e.target.value)}
+                  />
+                  <p className="text-[10px] text-muted-foreground/60 leading-relaxed pt-1">
+                    Defines the identity banner and speech wake-word triggers (e.g. saying <span className="text-primary font-bold">"hey {agentNameInput || 'Jarvis'}"</span>).
+                  </p>
                 </div>
               </section>
 

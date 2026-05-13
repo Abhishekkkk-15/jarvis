@@ -9,7 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { AIService } from '../services/ai.service';
 import { ToolService } from '../services/tool.service';
 import { DatabaseService } from '../database/database.service';
-import { messages } from '@jarvis/database';
+import { messages, conversations } from '@jarvis/database';
 import { TtsService } from '../services/tts.service';
 import { SttService } from '../services/stt.service';
 
@@ -73,11 +73,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.processingClients.add(client.id);
     
     const DEFAULT_CONVERSATION_ID = '00000000-0000-0000-0000-000000000000';
-    const conversationId = payload.conversationId && payload.conversationId !== 'default' 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const conversationId = payload.conversationId && uuidRegex.test(payload.conversationId)
       ? payload.conversationId 
       : DEFAULT_CONVERSATION_ID;
 
     try {
+      // 0. Ensure base conversation record exists to satisfy strict foreign key schema constraints
+      await this.databaseService.db.insert(conversations).values({
+        id: conversationId,
+        title: payload.content.substring(0, 40),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).onConflictDoNothing().catch(() => {});
 
       // 1. Fetch previous historical context messages from DB to enable continuous multi-turn memory persistence
       const pastDbMessages = await this.databaseService.db

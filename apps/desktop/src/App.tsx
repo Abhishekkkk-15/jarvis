@@ -13,7 +13,8 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 
 export default function App() {
-  const { messages, sendMessage, isConnected, activeScreen } = useJarvisStore();
+  const { messages, sendMessage, isConnected, activeScreen, settings } = useJarvisStore();
+  const agentName = settings?.agentName || 'Jarvis';
   const { isListening, isSpeaking, startListening, stopListening, speak } = useVoiceManager();
   const [showCommandBar, setShowCommandBar] = useState(false);
 
@@ -54,7 +55,7 @@ export default function App() {
           style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Jarvis</span>
+            <span className="text-sm font-medium text-muted-foreground">{agentName}</span>
             <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Pro</span>
           </div>
           <div className="flex items-center gap-4">

@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 
 import { ToolService } from './tool.service';
 import { MemoryService } from './memory.service';
+import { SettingsService } from './settings.service';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class AIService {
     private readonly toolService: ToolService,
     @Inject(forwardRef(() => MemoryService))
     private readonly memoryService: MemoryService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async streamResponse(messages: (HumanMessage | SystemMessage | any)[]): Promise<any> {
@@ -46,11 +48,16 @@ export class AIService {
       }
     } catch (e) {}
 
+    // Fetch active customized agent identity setup dynamically
+    const userSettings = await this.settingsService.getSettings();
+    const agentName = userSettings.agentName || 'Jarvis';
+
     const systemPrompt = new SystemMessage(`
-      You are Jarvis, a sophisticated personal AI assistant.
+      You are ${agentName}, a sophisticated personal AI assistant.
       You speak in the first person (use "I", "me", "my") and maintain a polite, highly professional, and helpful tone.
       
       YOUR OPERATING PRINCIPLES:
+      - Your name is strictly ${agentName}. If asked for your name or identity, you MUST reply that your name is ${agentName}. Never refer to yourself as Jarvis unless configured as Jarvis.
       - Be the user's primary interface to this machine (OS: Windows).
       - Take ownership of your actions (e.g., "I have opened the browser for you").
       - You have direct control over: 🌐 Browser, 🖥️ Desktop, 📂 Filesystem, 👁️ Vision, 🧠 Memory, and 💻 Terminal.
@@ -63,15 +70,15 @@ export class AIService {
       
       Examples of actions:
       User: "open vscode"
-      Jarvis: Right away, sir. Opening Visual Studio Code for you now.
+      ${agentName}: Right away, sir. Opening Visual Studio Code for you now.
       <function=open_application {"nameOrPath": "vscode"}>
 
       User: "my name is Alex and i love Next.js"
-      Jarvis: I will certainly remember that your name is Alex and your passion for Next.js.
+      ${agentName}: I will certainly remember that your name is Alex and your passion for Next.js.
       <function=save_memory {"content": "User's name is Alex. Passionate about Next.js"}>
 
       User: "open youtube"
-      Jarvis: Opening YouTube in your browser.
+      ${agentName}: Opening YouTube in your browser.
       <function=open_url {"url": "https://www.youtube.com"}>
     `);
 

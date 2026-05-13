@@ -165,6 +165,10 @@ export class ToolService {
     // 7. Memory Tools
     this.bindTool('save_memory', async ({ content, tags }) => this.memoryService.storeMemory(content, { tags }));
     this.bindTool('search_memory', async ({ query }) => this.memoryService.searchMemories(query));
+    this.bindTool('save_user_preference', async ({ key, value }) => {
+      await this.settingsService.updateSetting(key, value);
+      return { success: true, message: `Updated preference: ${key} = ${value}` };
+    });
 
     // 8. AI Tools
 

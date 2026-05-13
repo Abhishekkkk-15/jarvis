@@ -14,6 +14,7 @@ export interface VoiceSettings {
 export interface UserSettings {
   voice: VoiceSettings;
   theme: string;
+  agentName: string;
 }
 
 @Injectable()
@@ -27,6 +28,7 @@ export class SettingsService {
       volume: 100,
     },
     theme: 'calm',
+    agentName: 'Jarvis',
   };
 
   constructor(private readonly db: DatabaseService) {}

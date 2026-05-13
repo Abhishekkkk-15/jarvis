@@ -23,8 +23,10 @@ interface JarvisState {
   isPersistentMode: boolean;
   settings: any;
   availableVoices: string[];
+  activeConversationId: string;
   connect: () => void;
   sendMessage: (content: string) => void;
+  clearMessages: () => void;
   setActiveScreen: (screen: JarvisState['activeScreen']) => void;
   setTheme: (theme: JarvisState['theme']) => void;
   setIsListening: (isListening: boolean) => void;
@@ -43,6 +45,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   isConnected: false,
   socket: null,
   activeScreen: 'chat',
+  activeConversationId: crypto.randomUUID(),
   theme: 'calm',
   isListening: false,
   isSpeaking: false,
@@ -191,10 +194,18 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
     }
 
     // 3. Emit payload with ambient physical screen context flag if voice mode is activated
-    const { isPersistentMode, isListening } = get();
+    const { isPersistentMode, isListening, activeConversationId } = get();
     socket.emit('sendMessage', { 
       content, 
+      conversationId: activeConversationId,
       includeScreenSense: isPersistentMode || isListening 
+    });
+  },
+  
+  clearMessages: () => {
+    set({ 
+      messages: [], 
+      activeConversationId: crypto.randomUUID() 
     });
   },
   

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun, Mic, MicOff } from 'lucide-react';
+import { Send, User, Bot, Sparkles, ShieldCheck, Zap, Palette, Monitor, Moon, Sun, Mic, MicOff, RotateCcw } from 'lucide-react';
 import { Message } from '@jarvis/shared';
 import { ToolTimeline } from './tools/ToolTimeline';
 import { useJarvisStore } from '../store/useJarvisStore';
@@ -13,7 +13,8 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = React.useState('');
-  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode } = useJarvisStore();
+  const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode, clearMessages } = useJarvisStore();
+  const agentName = settings?.agentName || 'Jarvis';
   const endRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const spokenIdsRef = useRef<Set<string>>(new Set());
@@ -54,7 +55,8 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
           if (lastResult && lastResult.isFinal) {
             const finalPhrase = lastResult[0].transcript.trim();
             const lowerPhrase = finalPhrase.toLowerCase();
-            if (lowerPhrase.startsWith('jarvis') || lowerPhrase.includes('jarvis')) {
+            const wakeWord = (state.settings?.agentName || 'Jarvis').toLowerCase();
+            if (lowerPhrase.startsWith(wakeWord) || lowerPhrase.includes(wakeWord) || lowerPhrase.startsWith('hey ' + wakeWord)) {
               setTimeout(() => {
                 onSendMessage(finalPhrase);
                 setInput('');
@@ -198,7 +200,7 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
                 <p className="text-sm text-muted-foreground/40 font-light max-w-sm leading-relaxed mx-auto">
                   {isListening 
                     ? "Speak clearly. I am processing your neural intent."
-                    : "I am Jarvis. Your personal agent for the high-performance workspace."
+                    : `I am ${agentName}. Your personal agent for the high-performance workspace.`
                   }
                 </p>
               </div>
@@ -278,7 +280,16 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
               </div>
             </div>
             
-            <div className="mt-4 flex justify-center items-center gap-8 text-[8px] text-muted-foreground/20 uppercase tracking-[0.4em] font-bold">
+            <div className="mt-4 flex justify-center items-center gap-6 text-[8px] text-muted-foreground/20 uppercase tracking-[0.4em] font-bold select-none">
+              <button 
+                type="button" 
+                onClick={clearMessages}
+                className="flex items-center gap-1.5 hover:text-primary transition-all cursor-pointer"
+                title="Rotate conversation context to start fresh"
+              >
+                <RotateCcw className="w-2.5 h-2.5" />
+                <span>Rotate Context</span>
+              </button>
               <div className="flex items-center gap-2">
                 <kbd className="px-1.5 py-0.5 bg-muted/50 rounded border border-border">⌘K</kbd>
                 <span>Command Bar</span>
