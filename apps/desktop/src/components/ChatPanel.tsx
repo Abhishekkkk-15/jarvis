@@ -16,14 +16,19 @@ export function ChatPanel({ messages, onSendMessage }: ChatPanelProps) {
   const { theme, setTheme, isListening, setIsListening, isSpeaking, speak, settings, isPersistentMode, setIsPersistentMode } = useJarvisStore();
   const endRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const spokenIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
     
-    // Auto-Speak Logic
+    // Auto-Speak Logic - Guaranteed strictly once per message
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.role === 'assistant' && lastMsg.isFinal && settings?.voice?.autoSpeak) {
-      speak(lastMsg.content);
+      const msgId = lastMsg.id || lastMsg.content;
+      if (!spokenIdsRef.current.has(msgId)) {
+        spokenIdsRef.current.add(msgId);
+        speak(lastMsg.content);
+      }
     }
   }, [messages, settings?.voice?.autoSpeak]);
 

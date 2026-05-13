@@ -5,6 +5,7 @@ import { settings } from '@jarvis/database';
 import { eq } from 'drizzle-orm';
 
 import { ToolService } from './tool.service';
+import { MemoryService } from './memory.service';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
 @Injectable()
@@ -13,6 +14,8 @@ export class AIService {
     private readonly databaseService: DatabaseService,
     @Inject(forwardRef(() => ToolService))
     private readonly toolService: ToolService,
+    @Inject(forwardRef(() => MemoryService))
+    private readonly memoryService: MemoryService,
   ) {}
 
   async streamResponse(messages: (HumanMessage | SystemMessage | any)[]): Promise<any> {
@@ -29,6 +32,20 @@ export class AIService {
       },
     }));
 
+    // Fetch user details/preferences stored in long-term memory smartly
+    let savedMemoriesContext = '';
+    try {
+      const allMemories = await this.memoryService.getAllMemories();
+      if (allMemories && allMemories.length > 0) {
+        savedMemoriesContext = `
+      SAVED USER DETAILS & SMART CONTEXT:
+      The following facts, details, and personal preferences about the user have been remembered across past sessions:
+      ${allMemories.map(m => `- ${m.content}`).join('\n')}
+      
+      Smartly incorporate this information to personalize your answers and tone naturally, just like a dedicated human assistant would.`;
+      }
+    } catch (e) {}
+
     const systemPrompt = new SystemMessage(`
       You are Jarvis, a sophisticated personal AI assistant.
       You speak in the first person (use "I", "me", "my") and maintain a polite, highly professional, and helpful tone.
@@ -37,19 +54,21 @@ export class AIService {
       - Be the user's primary interface to this machine (OS: Windows).
       - Take ownership of your actions (e.g., "I have opened the browser for you").
       - You have direct control over: 🌐 Browser, 🖥️ Desktop, 📂 Filesystem, 👁️ Vision, 🧠 Memory, and 💻 Terminal.
+      ${savedMemoriesContext}
       
       CRITICAL INSTRUCTIONS FOR AUTOMATION & TOOL EXECUTION:
       1. When the user requests an OS action like opening an application, browsing a site, or running a terminal command, you MUST invoke the relevant tool.
-      2. To invoke a tool reliably, output the tool call directly in your response using the tag signature format: <function=tool_name {"param": "value"}>
+      2. If the user shares personal details, their name, preferences, or explicitly asks you to remember something smartly, you MUST invoke the save_memory tool instantly.
+      3. To invoke a tool reliably, output the tool call directly in your response using the tag signature format: <function=tool_name {"param": "value"}>
       
       Examples of actions:
       User: "open vscode"
       Jarvis: Right away, sir. Opening Visual Studio Code for you now.
       <function=open_application {"nameOrPath": "vscode"}>
 
-      User: "open notepad"
-      Jarvis: Launching Notepad immediately.
-      <function=open_application {"nameOrPath": "notepad"}>
+      User: "my name is Alex and i love Next.js"
+      Jarvis: I will certainly remember that your name is Alex and your passion for Next.js.
+      <function=save_memory {"content": "User's name is Alex. Passionate about Next.js"}>
 
       User: "open youtube"
       Jarvis: Opening YouTube in your browser.

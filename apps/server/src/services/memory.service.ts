@@ -15,7 +15,7 @@ export class MemoryService {
   async storeMemory(content: string, metadata: any = {}) {
     // 1. Get embeddings
     const provider = await this.aiService.getProvider();
-    if (!provider) return;
+    if (!provider) return { success: false, message: "AI provider unavailable" };
     
     const embeddings = await provider.getEmbeddings().embedQuery(content);
     
@@ -23,17 +23,24 @@ export class MemoryService {
     await this.databaseService.db.insert(memories).values({
       content,
       metadata,
-      vector: JSON.stringify(embeddings), // Storing as JSON string for now if pgvector is missing
+      vector: JSON.stringify(embeddings),
     });
+
+    return { success: true, message: `Successfully remembered: "${content}"` };
   }
 
   async searchMemories(query: string, limit: number = 5) {
-    // If we had pgvector, we would do a cosine similarity search here.
-    // For now, we'll do a simple text search as fallback.
     return this.databaseService.db
       .select()
       .from(memories)
       .where(sql`content ILIKE ${'%' + query + '%'}`)
       .limit(limit);
+  }
+
+  async getAllMemories() {
+    return this.databaseService.db
+      .select()
+      .from(memories)
+      .limit(50);
   }
 }
