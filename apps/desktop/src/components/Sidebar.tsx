@@ -10,7 +10,8 @@ export function Sidebar() {
   const navItems = [
     { icon: MessageSquare, label: 'Chat', id: 'chat' },
     { icon: Brain, label: 'Memory', id: 'memory' },
-    { icon: History, label: 'History', id: 'history' },
+    { icon: LayoutGrid, label: 'Workflows', id: 'workflows' },
+    { icon: History, label: 'Browser Suite', id: 'history' },
   ] as const;
 
   return (
