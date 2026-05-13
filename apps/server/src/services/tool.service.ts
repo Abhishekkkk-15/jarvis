@@ -103,15 +103,51 @@ export class ToolService {
     });
 
     // 2. Filesystem Tools
-    this.bindTool('list_directory', async ({ path }) => this.fileService.listDirectory(path));
-    this.bindTool('read_file', async ({ path }) => ({ content: await this.fileService.readFile(path) }));
-    this.bindTool('write_file', async ({ path, content }) => this.fileService.writeFile(path, content));
-    this.bindTool('delete_file', async ({ path }) => this.fileService.deleteFile(path));
+    this.bindTool('list_directory', async ({ path: dirPath }) => {
+      try {
+        const target = path.isAbsolute(dirPath) ? dirPath : path.join(process.env.USERPROFILE || process.env.HOME || '', 'Desktop', dirPath);
+        return await this.fileService.listDirectory(target);
+      } catch (err: any) {
+        return { error: `Failed to list directory: ${err.message}` };
+      }
+    });
+
+    this.bindTool('read_file', async ({ path: filePath }) => {
+      try {
+        const target = path.isAbsolute(filePath) ? filePath : path.join(process.env.USERPROFILE || process.env.HOME || '', 'Desktop', filePath);
+        return { content: await this.fileService.readFile(target) };
+      } catch (err: any) {
+        return { error: `Failed to read file: ${err.message}` };
+      }
+    });
+
+    this.bindTool('write_file', async ({ path: filePath, content }) => {
+      try {
+        const target = path.isAbsolute(filePath) ? filePath : path.join(process.env.USERPROFILE || process.env.HOME || '', 'Desktop', filePath);
+        await this.fileService.writeFile(target, content);
+        return { success: true, message: `Successfully saved content to ${target}` };
+      } catch (err: any) {
+        return { error: `Failed to write file: ${err.message}` };
+      }
+    });
+
+    this.bindTool('delete_file', async ({ path: filePath }) => {
+      try {
+        const target = path.isAbsolute(filePath) ? filePath : path.join(process.env.USERPROFILE || process.env.HOME || '', 'Desktop', filePath);
+        return await this.fileService.deleteFile(target);
+      } catch (err: any) {
+        return { error: `Failed to delete file: ${err.message}` };
+      }
+    });
+
     this.bindTool('search_files', async ({ query, root }) => ({ results: await this.fileService.searchFiles(query, root) }));
+
     this.bindTool('move_file', async ({ source, destination }) => {
       try {
-        await fs.rename(source, destination);
-        return { success: true, message: `Successfully moved item to ${destination}` };
+        const srcTarget = path.isAbsolute(source) ? source : path.join(process.env.USERPROFILE || process.env.HOME || '', 'Desktop', source);
+        const dstTarget = path.isAbsolute(destination) ? destination : path.join(process.env.USERPROFILE || process.env.HOME || '', 'Desktop', destination);
+        await fs.rename(srcTarget, dstTarget);
+        return { success: true, message: `Successfully moved item to ${dstTarget}` };
       } catch (err: any) {
         return { error: err.message };
       }
@@ -222,10 +258,15 @@ export class ToolService {
 
     // 11. Workflow Tools (Trigger legacy workflow)
     this.bindTool('execute_workflow', async ({ workflowId }) => {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workflowId);
+      const condition = isUuid 
+        ? sql`id = ${workflowId} OR name ILIKE ${'%' + workflowId + '%'}`
+        : sql`name ILIKE ${'%' + workflowId + '%'}`;
+
       const found = await this.databaseService.db
         .select()
         .from(workflows)
-        .where(sql`id = ${workflowId} OR name ILIKE ${'%' + workflowId + '%'}`)
+        .where(condition)
         .limit(1);
 
       let specsStr = '';
