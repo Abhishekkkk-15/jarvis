@@ -145,12 +145,18 @@ export const createNvidiaTtsProvider = (apiKey: string, model = 'nvidia/magpie-t
   });
 };
 
-export const createGroqTtsProvider = (apiKey: string, model = 'canopylabs/orpheus-v1-english', voice?: string) => {
+export const createGroqTtsProvider = (
+  apiKey: string,
+  model = 'canopylabs/orpheus-v1-english',
+  voice?: string,
+  audioPrompt?: string
+) => {
   return new TtsProvider({
     apiKey,
     baseUrl: 'https://api.groq.com/openai/v1/audio/speech',
     model,
     voice: voice || 'autumn',
+    audioPrompt: audioPrompt || "Speak in a highly warm, friendly, awesome, and natural human tone. Friendly enthusiasm with gentle, perfect empathy.",
   });
 };
 

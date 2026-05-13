@@ -28,7 +28,10 @@ export class TtsService {
         const persona = voices.find((p: Persona) => p.id === v.voiceId);
         const voiceName = persona?.voice || 'autumn';
         
-        const tts = createGroqTtsProvider(groqKey, 'canopylabs/orpheus-v1-english', voiceName);
+        const personaStyle = persona?.style || 'Friendly & Natural';
+        const customPromptDirections = `Project a highly friendly, awesome, and natural human persona. Express a perfect conversational human tone with gentle confidence, warm enthusiasm, and excellent empathy tailored for a ${personaStyle} personality.`;
+        
+        const tts = createGroqTtsProvider(groqKey, 'canopylabs/orpheus-v1-english', voiceName, customPromptDirections);
         const audioBuffer = await tts.generateSpeech(text);
         console.log(`[TTS] Groq Audio: ${audioBuffer.length} bytes`);
 
