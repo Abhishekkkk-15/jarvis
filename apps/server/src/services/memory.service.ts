@@ -43,4 +43,11 @@ export class MemoryService {
       .from(memories)
       .limit(50);
   }
+
+  async deleteMemory(content: string) {
+    await this.databaseService.db
+      .delete(memories)
+      .where(sql`content ILIKE ${'%' + content + '%'}`);
+    return { success: true, message: `Successfully forgotten: "${content}"` };
+  }
 }

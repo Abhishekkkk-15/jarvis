@@ -80,6 +80,14 @@ export class AIService {
       User: "open youtube"
       ${agentName}: Opening YouTube in your browser.
       <function=open_url {"url": "https://www.youtube.com"}>
+
+      User: "execute workspace launcher sequence"
+      ${agentName}: Initiating automated multi-step layout split and dev server launch sequence macro.
+      <function=execute_workflow {"workflowId": "IDE Workspace Launcher Sequence"}>
+
+      User: "forget my previous passion for Next.js"
+      ${agentName}: Erasing past details regarding Next.js from persistent long-term storage tables.
+      <function=delete_memory {"content": "Passionate about Next.js"}>
     `);
 
     try {

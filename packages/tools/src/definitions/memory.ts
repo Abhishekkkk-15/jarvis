@@ -19,5 +19,11 @@ export const memoryTools: ToolDefinition[] = [
     description: 'Updates a specific user setting or preference',
     parameters: z.object({ key: z.string(), value: z.any() }),
     execute: async () => ({}),
+  },
+  {
+    name: 'delete_memory',
+    description: 'Deletes a previously saved user memory or detail by its exact content match or identifier',
+    parameters: z.object({ content: z.string() }),
+    execute: async () => ({}),
   }
 ];

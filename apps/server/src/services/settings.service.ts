@@ -81,5 +81,25 @@ export class SettingsService {
         target: settings.key,
         set: { value, updatedAt: new Date() },
       });
+
+    // Auto-tune voice profile seamlessly based on companion identity keywords
+    if (key === 'agentName' && typeof value === 'string') {
+      const lower = value.toLowerCase();
+      if (/alaska|friday|diana|nova|sarah/i.test(lower)) {
+        await this.updateVoiceSettings({
+          voiceId: 'groq-autumn-v1',
+          pitch: 2,
+          rate: 1,
+          autoSpeak: true,
+        }).catch(() => {});
+      } else if (/jarvis|butler|david|austin/i.test(lower)) {
+        await this.updateVoiceSettings({
+          voiceId: 'groq-austin',
+          pitch: -1,
+          rate: 0,
+          autoSpeak: true,
+        }).catch(() => {});
+      }
+    }
   }
 }
